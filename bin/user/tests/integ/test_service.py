@@ -70,7 +70,7 @@ class TestService(unittest.TestCase):
             'topics': cdict['topics'].sections,
             'connected_flag': False,
             'msg': False,
-            'max_msg_wait': 1 #ToDo - configure
+            'max_msg_wait': 5 #ToDo - configure
         }
         client2 = mqtt.Client(userdata=userdata2)
         client2.on_connect = utils.on_connect
