@@ -404,7 +404,7 @@ class Cache(object):
         self.cached_values = {}
 
 class FieldCache(Cache):
-    """ Manage the WeeWX field cache. """
+    """ Manage the field cache. """
 
     def get_value(self, key, unit_system):
         """ Get the cached value. """
@@ -429,23 +429,23 @@ class FieldCache(Cache):
         self.cached_values[key]['expiration'] = expiration
 
 class RecordCache(Cache):
-    """ Manage the WeeWX field cache. """
+    """ Manage the record cache. """
 
-    def get_value(self, field, unit_system):
+    def get_value(self, key, unit_system):
         """ Get the cached value. """
-        if field in self.cached_values:
+        if key in self.cached_values:
             if unit_system is None:
-                return self.cached_values[field]['value']
+                return self.cached_values[key]['value']
 
-            return weewx.units.to_std_system(self.cached_values[field]['value'], unit_system)
+            return weewx.units.to_std_system(self.cached_values[key]['value'], unit_system)
 
         return None #todo - what to return
 
-    def update_value(self, field, value, expiration=None):
+    def update_value(self, key, value, expiration=None):
         """ Update the cached value. """
-        self.cached_values[field] = {}
-        self.cached_values[field]['value'] = value
-        self.cached_values[field]['expiration'] = expiration
+        self.cached_values[key] = {}
+        self.cached_values[key]['value'] = value
+        self.cached_values[key]['expiration'] = expiration
 
 class CollectData(object):
     """ Manage fields that are 'grouped together', like wind data. """
@@ -560,6 +560,11 @@ class TopicManager(object):
         self.subscribed_topics[topic]['max_queue'] = max_queue
         self.subscribed_topics[topic]['queue'] = self.collected_queue
 
+        self.cached_topic_name = 'sensors/office/bme280'
+        self.cached_topic_polling = 30
+        self.cached_topic_expiration = 5
+        self.record_cache = RecordCache()
+
     def append_data(self, topic, in_data, fieldname=None):
         """ Add the MQTT data to the queue. """
         self.logger.debug("TopicManager data-> incoming %s: %s"
@@ -623,6 +628,14 @@ class TopicManager(object):
         queue = self._get_queue(topic)
         self.logger.trace("TopicManager starting queue %s size is: %i" %(topic, len(queue)))
         collector = CollectData(self.collected_fields, self.collected_units)
+        if not queue:
+            print("empty %s" % topic)
+            if topic == self.cached_topic_name:
+                print("cache retrieve time")
+                record = self.record_cache.get_value(topic, None)
+                if record is not None:
+                    yield record
+            return
         while queue:
             if queue[0]['data']['dateTime'] > end_ts:
                 self.logger.trace("TopicManager leaving queue: %s size: %i content: %s" %(topic, len(queue), queue[0]))
@@ -639,12 +652,18 @@ class TopicManager(object):
             if data:
                 self.logger.debug("TopicManager data-> outgoing %s: %s"
                                   %(topic, to_sorted_string(data)))
+                if topic == self.cached_topic_name:
+                    print("cache update time")
+                    self.record_cache.update_value(topic, data)
                 yield data
 
         data = collector.get_data()
         if data:
             self.logger.debug("TopicManager data-> outgoing collected %s: %s"
                               % (topic, to_sorted_string(data)))
+            if topic == self.cached_topic_name:
+                print("cache update time")
+                self.record_cache.update_value(topic, data)
             yield data
 
     def get_accumulated_data(self, topic, start_time, end_time, units):
