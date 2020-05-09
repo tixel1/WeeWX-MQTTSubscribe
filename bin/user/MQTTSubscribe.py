@@ -382,6 +382,71 @@ DRIVER_VERSION = VERSION
 
 # pylint: disable=fixme
 
+# todo - will this really work for both dictionaries and single values?
+# todo - expiration
+class Cache(object):
+    """ Base cache class. """
+    def __init__(self): # ToDo - pass in the actual configuration?
+        self.cached_values = {}
+
+    def update_expiration(self, key, expiration):
+        """ Remove a cached value. """
+        if key in self.cached_values:
+            self.cached_values[key]['expiration'] = expiration
+
+    def remove_value(self, key):
+        """ Remove a cached value. """
+        if key in self.cached_values:
+            del self.cached_values[key]
+
+    def clear_cache(self):
+        """ Clear the cache """
+        self.cached_values = {}
+
+class FieldCache(Cache):
+    """ Manage the WeeWX field cache. """
+
+    def get_value(self, key, unit_system):
+        """ Get the cached value. """
+        if key in self.cached_values:
+            if unit_system is None:
+                return self.cached_values[key]['value']
+
+            # match signature pylint: disable=unused-variable
+            (to_units, to_group) = weewx.units.getStandardUnitType(unit_system, key)
+            (value, new_units, new_group) = \
+                weewx.units.convert((self.cached_values[key]['value'],
+                                     self.cached_values[key]['units'], None), to_units)
+            return value
+
+        return None
+
+    def update_value(self, key, value, unit_system, expiration=None):
+        """ Update the cached value. """
+        self.cached_values[key] = {}
+        self.cached_values[key]['value'] = value
+        self.cached_values[key]['units'] = unit_system
+        self.cached_values[key]['expiration'] = expiration
+
+class RecordCache(Cache):
+    """ Manage the WeeWX field cache. """
+
+    def get_value(self, field, unit_system):
+        """ Get the cached value. """
+        if field in self.cached_values:
+            if unit_system is None:
+                return self.cached_values[field]['value']
+
+            return weewx.units.to_std_system(self.cached_values[field]['value'], unit_system)
+
+        return None #todo - what to return
+
+    def update_value(self, field, value, expiration=None):
+        """ Update the cached value. """
+        self.cached_values[field] = {}
+        self.cached_values[field]['value'] = value
+        self.cached_values[field]['expiration'] = expiration
+
 class CollectData(object):
     """ Manage fields that are 'grouped together', like wind data. """
     def __init__(self, fields, unit_system):
