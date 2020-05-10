@@ -537,6 +537,12 @@ class TopicManager(object):
             self.subscribed_topics[topic]['offset_format'] = offset_format
             self.subscribed_topics[topic]['max_queue'] = topic_dict.get('max_queue', max_queue)
             self.subscribed_topics[topic]['queue'] = deque()
+            self.subscribed_topics[topic]['cache'] = topic_dict.get('cache', None)
+            self.subscribed_topics[topic]['last_received_ts'] = time.time() # what to init
+            if self.subscribed_topics[topic]['cache'] is not None:
+                self.subscribed_topics[topic]['cache']['polling'] = to_float(self.subscribed_topics[topic]['cache']['polling'])
+            #print(self.subscribed_topics[topic]['cache']) # todo - harden, polling default of 0
+            #print("config")
 
         # Add the collector queue as a subscribed topic so that data can retrieved from it
         # Yes, this is a bit of a hack.
@@ -559,6 +565,7 @@ class TopicManager(object):
         self.subscribed_topics[topic]['offset_format'] = default_offset_format
         self.subscribed_topics[topic]['max_queue'] = max_queue
         self.subscribed_topics[topic]['queue'] = self.collected_queue
+        self.subscribed_topics[topic]['cache'] = None
 
         self.cached_topic_name = 'sensors/office/bme280'
         self.cached_topic_polling = 30
@@ -630,11 +637,15 @@ class TopicManager(object):
         collector = CollectData(self.collected_fields, self.collected_units)
         if not queue:
             print("empty %s" % topic)
-            if topic == self.cached_topic_name:
+            #if topic == self.cached_topic_name:
+            if self.subscribed_topics[topic]['cache'] is not None: # write helper routine to get cache
                 print("cache retrieve time")
-                record = self.record_cache.get_value(topic, None)
-                if record is not None:
-                    yield record
+                print(self.subscribed_topics[topic]['last_received_ts'])
+                print(self.subscribed_topics[topic]['cache']['polling'])
+                if time.time() - self.subscribed_topics[topic]['last_received_ts'] > self.subscribed_topics[topic]['cache']['polling']:
+                    record = self.record_cache.get_value(topic, None)
+                    if record is not None:
+                        yield record
             return
         while queue:
             if queue[0]['data']['dateTime'] > end_ts:
@@ -652,18 +663,24 @@ class TopicManager(object):
             if data:
                 self.logger.debug("TopicManager data-> outgoing %s: %s"
                                   %(topic, to_sorted_string(data)))
-                if topic == self.cached_topic_name:
+                if self.subscribed_topics[topic]['cache'] is not None: # write helper routine to get cache
+                # if topic == self.cached_topic_name:
                     print("cache update time")
-                    self.record_cache.update_value(topic, data)
+                    expiration = self.subscribed_topics[topic]['cache'].get('expiration', None)
+                    print(expiration)
+                    self.record_cache.update_value(topic, data, expiration)
+                    self.subscribed_topics[topic]['last_received_ts'] = time.time()
+                    print(self.subscribed_topics[topic]['last_received_ts'])
+                    print("cache updated")
                 yield data
 
         data = collector.get_data()
         if data:
             self.logger.debug("TopicManager data-> outgoing collected %s: %s"
                               % (topic, to_sorted_string(data)))
-            if topic == self.cached_topic_name:
-                print("cache update time")
-                self.record_cache.update_value(topic, data)
+            #if topic == self.cached_topic_name:
+            #    print("cache update time")
+            #    self.record_cache.update_value(topic, data)
             yield data
 
     def get_accumulated_data(self, topic, start_time, end_time, units):
