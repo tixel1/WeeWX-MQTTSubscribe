@@ -389,10 +389,10 @@ class Cache(object):
     def __init__(self): # ToDo - pass in the actual configuration?
         self.cached_values = {}
 
-    def update_expiration(self, key, expiration):
-        """ Remove a cached value. """
+    def update_ts(self, key, timestamp):
+        """ Update the ts. """
         if key in self.cached_values:
-            self.cached_values[key]['expiration'] = expiration
+            self.cached_values[key]['ts'] = timestamp
 
     def remove_value(self, key):
         """ Remove a cached value. """
@@ -405,8 +405,7 @@ class Cache(object):
 
 class FieldCache(Cache):
     """ Manage the field cache. """
-
-    def get_value(self, key, unit_system):
+    def get_value(self, key, unit_system, timestamp, expiration):
         """ Get the cached value. """
         if key in self.cached_values:
             if unit_system is None:
@@ -421,19 +420,23 @@ class FieldCache(Cache):
 
         return None
 
-    def update_value(self, key, value, unit_system, expiration=None):
+    def update_value(self, key, value, unit_system, timestamp):
         """ Update the cached value. """
         self.cached_values[key] = {}
         self.cached_values[key]['value'] = value
         self.cached_values[key]['units'] = unit_system
-        self.cached_values[key]['expiration'] = expiration
+        self.cached_values[key]['ts'] = timestamp
 
 class RecordCache(Cache):
     """ Manage the record cache. """
-
-    def get_value(self, key, unit_system):
+    def get_value(self, key, unit_system, timestamp, expiration):
         """ Get the cached value. """
-        if key in self.cached_values:
+        print(timestamp)
+        print(expiration)
+        if key in self.cached_values and timestamp - self.cached_values[key]['ts'] < expiration: # todo - possible None value for expiration
+            print(self.cached_values[key]['ts'])
+            temp = timestamp - self.cached_values[key]['ts']
+            print(temp)
             if unit_system is None:
                 return self.cached_values[key]['value']
 
@@ -441,11 +444,11 @@ class RecordCache(Cache):
 
         return None #todo - what to return
 
-    def update_value(self, key, value, expiration=None):
+    def update_value(self, key, value, timestamp):
         """ Update the cached value. """
         self.cached_values[key] = {}
         self.cached_values[key]['value'] = value
-        self.cached_values[key]['expiration'] = expiration
+        self.cached_values[key]['ts'] = timestamp
 
 class CollectData(object):
     """ Manage fields that are 'grouped together', like wind data. """
@@ -541,6 +544,7 @@ class TopicManager(object):
             self.subscribed_topics[topic]['last_received_ts'] = time.time() # what to init
             if self.subscribed_topics[topic]['cache'] is not None:
                 self.subscribed_topics[topic]['cache']['polling'] = to_float(self.subscribed_topics[topic]['cache']['polling'])
+                self.subscribed_topics[topic]['cache']['expiration'] = to_float(self.subscribed_topics[topic]['cache']['expiration'])
             #print(self.subscribed_topics[topic]['cache']) # todo - harden, polling default of 0
             #print("config")
 
@@ -643,7 +647,7 @@ class TopicManager(object):
                 print(self.subscribed_topics[topic]['last_received_ts'])
                 print(self.subscribed_topics[topic]['cache']['polling'])
                 if time.time() - self.subscribed_topics[topic]['last_received_ts'] > self.subscribed_topics[topic]['cache']['polling']:
-                    record = self.record_cache.get_value(topic, None)
+                    record = self.record_cache.get_value(topic, None, time.time(), self.subscribed_topics[topic]['cache']['expiration'])
                     if record is not None:
                         yield record
             return
@@ -666,9 +670,9 @@ class TopicManager(object):
                 if self.subscribed_topics[topic]['cache'] is not None: # write helper routine to get cache
                 # if topic == self.cached_topic_name:
                     print("cache update time")
-                    expiration = self.subscribed_topics[topic]['cache'].get('expiration', None)
-                    print(expiration)
-                    self.record_cache.update_value(topic, data, expiration)
+                    time_stamp = self.subscribed_topics[topic]['cache'].get('ts', None)
+                    print(time_stamp)
+                    self.record_cache.update_value(topic, data, time.time())
                     self.subscribed_topics[topic]['last_received_ts'] = time.time()
                     print(self.subscribed_topics[topic]['last_received_ts'])
                     print("cache updated")
