@@ -407,7 +407,8 @@ class FieldCache(Cache):
     """ Manage the field cache. """
     def get_value(self, key, unit_system, timestamp, expiration):
         """ Get the cached value. """
-        if key in self.cached_values:
+        if key in self.cached_values and \
+            (expiration is None or timestamp - self.cached_values[key]['timestamp'] < expiration):
             if unit_system is None:
                 return self.cached_values[key]['value']
 
@@ -420,11 +421,11 @@ class FieldCache(Cache):
 
         return None
 
-    def update_value(self, key, value, unit_system, timestamp):
+    def update_value(self, key, value, units, timestamp):
         """ Update the cached value. """
         self.cached_values[key] = {}
         self.cached_values[key]['value'] = value
-        self.cached_values[key]['units'] = unit_system
+        self.cached_values[key]['units'] = units
         self.cached_values[key]['timestamp'] = timestamp
 
 class RecordCache(Cache):

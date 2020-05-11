@@ -25,6 +25,11 @@ class weewx(object): # pylint: disable=invalid-name
         def to_std_system(self):
             pass
 
+        def getStandardUnitType(self):
+            pass
+
+        def convert(self):
+            pass
     class accum(object):
         def Accum(self):
             pass

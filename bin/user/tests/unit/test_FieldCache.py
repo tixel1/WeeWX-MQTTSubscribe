@@ -17,11 +17,10 @@ class Test_clear_cache(unittest.TestCase):
         SUT = FieldCache()
 
         key = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
-        record = {}
-        record[''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])] = round(random.uniform(1, 100), 2)
-        record[''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])] = round(random.uniform(1, 100), 2)
+        value = round(random.uniform(1, 100), 2)
+        units = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
         timestamp = time.time()
-        SUT.update_value(key, record, timestamp)
+        SUT.update_value(key, value, units, timestamp)
 
         SUT.clear_cache()
         self.assertEqual(SUT.cached_values, {})
@@ -31,95 +30,99 @@ class Test_update_value(unittest.TestCase):
         SUT = FieldCache()
 
         key = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
-        record = {}
-        record[''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])] = round(random.uniform(1, 100), 2)
-        record[''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])] = round(random.uniform(1, 100), 2)
+        value = round(random.uniform(1, 100), 2)
+        units = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
         timestamp = time.time()
-        unit_system = random.randint(1, 10)
-        SUT.update_value(key, record, timestamp)
+
+        SUT.update_value(key, value, units, timestamp)
         self.assertIn(key, SUT.cached_values)
-        self.assertEqual(SUT.cached_values[key]['value'], record)
+        self.assertEqual(SUT.cached_values[key]['value'], value)
+        self.assertEqual(SUT.cached_values[key]['units'], units)
         self.assertEqual(SUT.cached_values[key]['timestamp'], timestamp)
 
 class Test_get_value(unittest.TestCase):
-    def create_record(self):
-        record = {}
-        record[''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])] = round(random.uniform(1, 100), 2)
-        record[''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])] = round(random.uniform(1, 100), 2)
-        return record
-
     def test_key_not_in_cache(self):
         SUT = FieldCache()
 
-        record = SUT.get_value('foo', 1, 0, None)
+        value = SUT.get_value('foo', 1, 0, None)
 
-        self.assertIsNone(record)
+        self.assertIsNone(value)
 
     def test_get_data_unit_system_set(self):
 
-        with mock.patch('user.MQTTSubscribe.weewx.units.to_std_system') as mock_to_std_system:
-            SUT = FieldCache()
-            key = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
+        with mock.patch('user.MQTTSubscribe.weewx.units.getStandardUnitType')as mock_getStandardUnitType:
+            with mock.patch('user.MQTTSubscribe.weewx.units.convert') as mock_convert:
+                SUT = FieldCache()
+                key = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
+                value = round(random.uniform(1, 100), 2)
+                units = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
 
-            converted_record = self.create_record()
-            mock_to_std_system.return_value = converted_record
+                mock_getStandardUnitType.return_value = \
+                    (''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)]),
+                     ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)]))
 
-            record = self.create_record()
-            SUT.update_value(key, record, time.time())
+                converted_value = round(random.uniform(1, 100), 2)
+                mock_convert.return_value = \
+                    (converted_value, random.randint(1, 10), ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)]))
 
-            cached_record = SUT.get_value(key, 1, 0, None)
+                SUT.update_value(key, value, units, time.time())
 
-            self.assertEqual(cached_record, converted_record)
+                cached_value = SUT.get_value(key, 1, 0, None)
+
+                self.assertEqual(cached_value, converted_value)
 
     def test_get_data_unit_system_not_set(self):
         SUT = FieldCache()
 
         key = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
-        record = self.create_record()
-        SUT.update_value(key, record, time.time())
+        value = round(random.uniform(1, 100), 2)
+        units = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
+        SUT.update_value(key, value, units, time.time())
 
-        cached_record = SUT.get_value(key, None, 0, None)
-        self.assertEqual(cached_record, record)
+        cached_value = SUT.get_value(key, None, 0, None)
+        self.assertEqual(cached_value, value)
 
     def test_get_data_expiration_is_none(self):
         SUT = FieldCache()
 
         key = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
-        record = self.create_record()
-        SUT.update_value(key, record, time.time())
+        value = round(random.uniform(1, 100), 2)
+        units = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
+        SUT.update_value(key, value, units, time.time())
 
-        cached_record = SUT.get_value(key, None, None, None)
-        self.assertEqual(cached_record, record)
+        cached_value = SUT.get_value(key, None, None, None)
+        self.assertEqual(cached_value, value)
 
     def test_get_data_is_not_expired(self):
         SUT = FieldCache()
         key = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
-        record = self.create_record()
+        value = round(random.uniform(1, 100), 2)
+        units = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
         timestamp = time.time()
-        SUT.update_value(key, record, timestamp)
+        SUT.update_value(key, value, units, timestamp)
 
-        cached_record = SUT.get_value(key, None, timestamp, 1)
-        self.assertEqual(cached_record, record)
+        cached_value = SUT.get_value(key, None, timestamp, 1)
+        self.assertEqual(cached_value, value)
 
     def test_get_data_is_expired(self):
         SUT = FieldCache()
         key = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
-        record = self.create_record()
+        value = round(random.uniform(1, 100), 2)
+        units = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
         timestamp = time.time()
-        SUT.update_value(key, record, timestamp)
+        SUT.update_value(key, value, units, timestamp)
 
-        cached_record = SUT.get_value(key, None, timestamp + 1, 0)
-        self.assertIsNone(cached_record)
+        cached_value = SUT.get_value(key, None, timestamp + 1, 0)
+        self.assertIsNone(cached_value)
 
 class Test_update_timestamp(unittest.TestCase):
     def test_key_does_not_exist(self):
         # somewhat silly test
         SUT = FieldCache()
         key = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
-        record = {}
-        record[''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])] = round(random.uniform(1, 100), 2)
-        record[''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])] = round(random.uniform(1, 100), 2)
-        SUT.update_value(key, record, time.time())
+        value = round(random.uniform(1, 100), 2)
+        units = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
+        SUT.update_value(key, value, units, time.time())
 
         nonexisting_key = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
         SUT.update_timestamp(nonexisting_key, time.time())
@@ -128,10 +131,9 @@ class Test_update_timestamp(unittest.TestCase):
     def test_key_exists(self):
         SUT = FieldCache()
         key = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
-        record = {}
-        record[''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])] = round(random.uniform(1, 100), 2)
-        record[''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])] = round(random.uniform(1, 100), 2)
-        SUT.update_value(key, record, 0)
+        value = round(random.uniform(1, 100), 2)
+        units = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
+        SUT.update_value(key, value, units, 0)
 
         new_time = time.time()
         SUT.update_timestamp(key, new_time)
@@ -142,10 +144,9 @@ class Test_remove_value(unittest.TestCase):
         # somewhat silly test
         SUT = FieldCache()
         key = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
-        record = {}
-        record[''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])] = round(random.uniform(1, 100), 2)
-        record[''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])] = round(random.uniform(1, 100), 2)
-        SUT.update_value(key, record, time.time())
+        value = round(random.uniform(1, 100), 2)
+        units = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
+        SUT.update_value(key, value, units, time.time())
 
         nonexisting_key = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
         SUT.remove_value(nonexisting_key)
@@ -154,10 +155,9 @@ class Test_remove_value(unittest.TestCase):
     def test_key_exists(self):
         SUT = FieldCache()
         key = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
-        record = {}
-        record[''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])] = round(random.uniform(1, 100), 2)
-        record[''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])] = round(random.uniform(1, 100), 2)
-        SUT.update_value(key, record, time.time())
+        value = round(random.uniform(1, 100), 2)
+        units = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
+        SUT.update_value(key, value, units, time.time())
 
         SUT.remove_value(key)
         self.assertNotIn(key, SUT.cached_values)
