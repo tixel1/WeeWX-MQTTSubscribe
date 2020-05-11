@@ -431,13 +431,8 @@ class RecordCache(Cache):
     """ Manage the record cache. """
     def get_value(self, key, unit_system, timestamp, expiration):
         """ Get the cached value. """
-        print(timestamp)
-        print(expiration)
         if key in self.cached_values and \
             (expiration is None or timestamp - self.cached_values[key]['timestamp'] < expiration):
-            print(self.cached_values[key]['timestamp'])
-            temp = timestamp - self.cached_values[key]['timestamp']
-            print(temp)
             if unit_system is None:
                 return self.cached_values[key]['value']
 

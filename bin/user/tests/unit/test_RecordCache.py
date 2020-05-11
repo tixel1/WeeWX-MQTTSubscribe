@@ -6,17 +6,53 @@ import time
 
 import unittest
 import mock
+
+import test_weewx_stubs # used to set up stubs - pylint: disable=unused-import
 from user.MQTTSubscribe import RecordCache
 
+class Test_clear_cache(unittest.TestCase):
+    def test_cache_is_cleared(self):
+        SUT = RecordCache()
+
+        key = 'key'
+        record = {}
+        record['field1'] = "foo"
+        record['field2'] = "bar"
+        timestamp = time.time()
+        SUT.update_value(key, record, timestamp)
+
+        SUT.clear_cache()
+        self.assertEqual(SUT.cached_values, {})
+
+class Test_update_value(unittest.TestCase):
+    def test_value_is_updated(self):
+        SUT = RecordCache()
+
+        key = 'key'
+        record = {}
+        record['field1'] = "foo"
+        record['field2'] = "bar"
+        timestamp = time.time()
+        SUT.update_value(key, record, timestamp)
+        self.assertIn(key, SUT.cached_values)
+        # ToDo - more asserts
+
 class Test_get_value(unittest.TestCase):
+    def create_record(self):
+        record = {}
+        record['field1'] = "foo"
+        record['field2'] = "bar"
+        return record
+
     def test_update_value(self):
         SUT = RecordCache()
 
-        key = "foo"
-        value = "bar"
+        key = 'key'
+        record = self.create_record()
         timestamp = time.time()
-        SUT.update_value(key, value, timestamp)
+        SUT.update_value(key, record, timestamp)
         self.assertIn(key, SUT.cached_values)
+        # ToDo - more asserts
 
     def test_key_not_in_cache(self):
         SUT = RecordCache()
@@ -26,38 +62,60 @@ class Test_get_value(unittest.TestCase):
         self.assertIsNone(record)
 
     def test_get_data_unit_system_set(self):
-        data = {}
+
         with mock.patch('user.MQTTSubscribe.weewx.units.to_std_system') as mock_to_std_system:
             SUT = RecordCache()
-            mock_to_std_system.return_value = data
+            key = 'key'
 
-            key = "foo"
-            value = "bar"
-            timestamp = time.time()
-            SUT.update_value(key, value, timestamp)
+            converted_record = self.create_record()
+            mock_to_std_system.return_value = converted_record
 
-            record = SUT.get_value('foo', 1, 0, None)
+            record = self.create_record()
+            SUT.update_value(key, record, time.time())
 
-            print(record)
+            cached_record = SUT.get_value(key, 1, 0, None)
+
+            self.assertEqual(cached_record, converted_record)
 
     def test_get_data_unit_system_not_set(self):
-        # data = {}
-        # with mock.patch('user.MQTTSubscribe.weewx.units.to_std_system') as mock_to_std_system:
         SUT = RecordCache()
-        #mock_to_std_system.return_value = data
 
-        key = "foo"
-        value = "bar"
+        key = 'key'
+        record = self.create_record()
+        SUT.update_value(key, record, time.time())
+
+        cached_record = SUT.get_value(key, None, 0, None)
+        self.assertEqual(cached_record, record)
+
+    def test_get_data_expiration_is_none(self):
+        SUT = RecordCache()
+
+        key = 'key'
+        record = self.create_record()
+        SUT.update_value(key, record, time.time())
+
+        cached_record = SUT.get_value(key, None, None, None)
+        self.assertEqual(cached_record, record)
+
+    def test_get_data_is_not_expired(self):
+        SUT = RecordCache()
+        key = 'key'
+        record = self.create_record()
         timestamp = time.time()
-        SUT.update_value(key, value, timestamp)
+        SUT.update_value(key, record, timestamp)
 
-        record = SUT.get_value('foo', None, 0, None)
+        cached_record = SUT.get_value(key, None, timestamp, 1)
+        self.assertEqual(cached_record, record)
 
-        print(record)
+    def test_get_data_is_expired(self):
+        SUT = RecordCache()
+        key = 'key'
+        record = self.create_record()
+        timestamp = time.time()
+        SUT.update_value(key, record, timestamp)
 
-    # test get_data expiration is none
-    # test get_data is not expired
-    # test get_data expired
+        cached_record = SUT.get_value(key, None, timestamp + 1, 0)
+        self.assertIsNone(cached_record)
 
     # test update_timestamp, key exists
     # test update_timestamp, key does not exist
