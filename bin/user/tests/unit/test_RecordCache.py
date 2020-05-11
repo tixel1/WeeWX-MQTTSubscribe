@@ -117,13 +117,56 @@ class Test_get_value(unittest.TestCase):
         cached_record = SUT.get_value(key, None, timestamp + 1, 0)
         self.assertIsNone(cached_record)
 
-    # test update_timestamp, key exists
-    # test update_timestamp, key does not exist
+class Test_update_timestamp(unittest.TestCase):
+    def test_key_does_not_exist(self):
+        # somewhat silly test
+        SUT = RecordCache()
+        key = 'key'
+        record = {}
+        record['field1'] = "foo"
+        record['field2'] = "bar"
+        SUT.update_value(key, record, time.time())
 
-    # test remove_value, key exists
-    # test remove_value, key does not exist
+        nonexisting_key = 'key2'
+        SUT.update_timestamp(nonexisting_key, time.time())
+        self.assertNotIn(nonexisting_key, SUT.cached_values)
 
-    # test clear cache
+    def test_key_exists(self):
+        SUT = RecordCache()
+        key = 'key'
+        record = {}
+        record['field1'] = "foo"
+        record['field2'] = "bar"
+        SUT.update_value(key, record, 0)
+
+        new_time = time.time()
+        SUT.update_timestamp(key, new_time)
+        self.assertEqual(SUT.cached_values['key']['timestamp'], new_time)
+
+class Test_remove_value(unittest.TestCase):
+    def test_key_does_not_exist(self):
+        # somewhat silly test
+        SUT = RecordCache()
+        key = 'key'
+        record = {}
+        record['field1'] = "foo"
+        record['field2'] = "bar"
+        SUT.update_value(key, record, time.time())
+
+        nonexisting_key = 'key2'
+        SUT.remove_value(nonexisting_key)
+        self.assertNotIn(nonexisting_key, SUT.cached_values)
+
+    def test_key_exists(self):
+        SUT = RecordCache()
+        key = 'key'
+        record = {}
+        record['field1'] = "foo"
+        record['field2'] = "bar"
+        SUT.update_value(key, record, time.time())
+
+        SUT.remove_value(key)
+        self.assertNotIn(key, SUT.cached_values)
 
 if __name__ == '__main__':
     unittest.main(exit=False)
