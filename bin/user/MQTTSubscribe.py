@@ -389,10 +389,10 @@ class Cache(object):
     def __init__(self): # ToDo - pass in the actual configuration?
         self.cached_values = {}
 
-    def update_ts(self, key, timestamp):
+    def update_timestamp(self, key, timestamp):
         """ Update the ts. """
         if key in self.cached_values:
-            self.cached_values[key]['ts'] = timestamp
+            self.cached_values[key]['timestamp'] = timestamp
 
     def remove_value(self, key):
         """ Remove a cached value. """
@@ -425,7 +425,7 @@ class FieldCache(Cache):
         self.cached_values[key] = {}
         self.cached_values[key]['value'] = value
         self.cached_values[key]['units'] = unit_system
-        self.cached_values[key]['ts'] = timestamp
+        self.cached_values[key]['timestamp'] = timestamp
 
 class RecordCache(Cache):
     """ Manage the record cache. """
@@ -433,9 +433,10 @@ class RecordCache(Cache):
         """ Get the cached value. """
         print(timestamp)
         print(expiration)
-        if key in self.cached_values and timestamp - self.cached_values[key]['ts'] < expiration: # todo - possible None value for expiration
-            print(self.cached_values[key]['ts'])
-            temp = timestamp - self.cached_values[key]['ts']
+        if key in self.cached_values and \
+            (expiration is None or timestamp - self.cached_values[key]['timestamp'] < expiration):
+            print(self.cached_values[key]['timestamp'])
+            temp = timestamp - self.cached_values[key]['timestamp']
             print(temp)
             if unit_system is None:
                 return self.cached_values[key]['value']
@@ -448,7 +449,7 @@ class RecordCache(Cache):
         """ Update the cached value. """
         self.cached_values[key] = {}
         self.cached_values[key]['value'] = value
-        self.cached_values[key]['ts'] = timestamp
+        self.cached_values[key]['timestamp'] = timestamp
 
 class CollectData(object):
     """ Manage fields that are 'grouped together', like wind data. """
