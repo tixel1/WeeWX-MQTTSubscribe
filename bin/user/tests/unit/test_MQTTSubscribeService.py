@@ -7,7 +7,9 @@ from __future__ import with_statement
 import unittest
 import mock
 
+import configobj
 import random
+import string
 import time
 
 import test_weewx_stubs
@@ -159,6 +161,7 @@ class Testnew_archive_record(unittest.TestCase):
 
         self.config_dict['MQTTSubscribeService'] = {}
         self.config_dict['MQTTSubscribeService']['topic'] = topic
+        self.config_dict['MQTTSubscribeService']['binding'] = 'archive'
 
     @staticmethod
     def generator(test_data):
@@ -189,6 +192,63 @@ class Testnew_archive_record(unittest.TestCase):
             self.assertDictEqual(new_loop_record_event.record, self.final_record_data)
 
         SUT.shutDown()
+
+    def test_field_missing(self):
+        unit_system = random.randint(1, 10)
+        fieldname = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
+        config_dict = {
+            'archive_field_cache': {
+                'fields': {
+                    fieldname: {}
+                }
+            }
+        }
+
+        config = configobj.ConfigObj(config_dict)
+
+        with mock.patch('user.MQTTSubscribe.MQTTSubscribe'):
+            with mock.patch('user.MQTTSubscribe.RecordCache'):
+                # pylint: disable=no-member
+                SUT = MQTTSubscribeService(self.mock_StdEngine, config)
+
+                record = {
+                    'usUnits': unit_system,
+                    'dateTime': time.time()
+                }
+
+                event = test_weewx_stubs.Event(test_weewx_stubs.NEW_ARCHIVE_RECORD, record=record)
+
+                SUT.new_archive_record(event)
+                SUT.cache.get_value.assert_called_once()
+
+    def test_field_exists(self):
+        unit_system = random.randint(1, 10)
+        fieldname = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
+        config_dict = {
+            'archive_field_cache': {
+                'fields': {
+                    fieldname: {}
+                }
+            }
+        }
+
+        config = configobj.ConfigObj(config_dict)
+
+        with mock.patch('user.MQTTSubscribe.MQTTSubscribe'):
+            with mock.patch('user.MQTTSubscribe.RecordCache'):
+                # pylint: disable=no-member
+                SUT = MQTTSubscribeService(self.mock_StdEngine, config)
+
+                record = {
+                    'usUnits': unit_system,
+                    'dateTime': time.time(),
+                    fieldname: round(random.uniform(1, 100), 2)
+                }
+
+                event = test_weewx_stubs.Event(test_weewx_stubs.NEW_ARCHIVE_RECORD, record=record)
+
+                SUT.new_archive_record(event)
+                SUT.cache.update_value.assert_called_once()
 
 if __name__ == '__main__':
     unittest.main(exit=False)
