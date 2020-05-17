@@ -1,8 +1,8 @@
 image:
   # before enabling, need to manage code coverage better
-  #- Ubuntu1604
-  - Ubuntu1804
-  #- Ubuntu2004
+  - Ubuntu1604
+  - Ubuntu
+  - Ubuntu2004
 
 environment:
   # common values
@@ -104,6 +104,11 @@ for:
   test_script:
     - sh: echo "test_script"
     - sh: appveyor/test_script.sh
+
+  matrix:
+    only:
+    - image: Ubuntu
+    - job_group: build
 
   after_test:
     - sh: echo "after_test"
