@@ -105,6 +105,7 @@ for:
     - sh: echo "test_script"
     - sh: appveyor/test_script.sh
 
+-
   matrix:
     only:
     - image: Ubuntu
