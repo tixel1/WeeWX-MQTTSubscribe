@@ -25,7 +25,7 @@ environment:
     #  job_depends_on: initialize
     #  PYTHON: 3.7
 
-    - job_name: weewx4.0.0-py3.6.10 %APPVEYOR_BUILD_WORKER_IMAGE%
+    - job_name: weewx4.0.0-py3.6.10
       job_group: build
       job_depends_on: initialize
       CODECOVIO_UPLOAD: true
@@ -95,8 +95,8 @@ for:
   -
     matrix:
       only:
-        # - image: Ubuntu
-        - job_group: build2
+        - image: Ubuntu
+          job_group: build
 
     after_test:
     - sh: echo "after_test"
