@@ -55,10 +55,10 @@ environment:
     #  WEEWX: 3.7.1
     #  PYTHON: 2.7 
 
-    - job_name: weewx4.0.0-py3.9
-      job_group: buildX
-      job_depends_on: initialize
-      PYTHON: 3.9
+    #- job_name: weewx4.0.0-py3.9
+    #  job_group: buildX
+    #  job_depends_on: initialize
+    #  PYTHON: 3.9
 
     - job_name: initialize
       WEEWX_URL: http://www.weewx.com/downloads/development_versions/
@@ -108,8 +108,8 @@ for:
 -
   matrix:
     only:
-    #- image: Ubuntu
-    - job_group: build
+    - image: Ubuntu
+    #- job_group: build
 
   after_test:
     - sh: echo "after_test"
