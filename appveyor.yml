@@ -69,12 +69,12 @@ environment:
 
 stack: python %PYTHON%  
 
-branches:
-  only:
-    -  master
-  image: 
-    - Ubuntu1604
-    - Ubuntu2004
+#branches:
+#  only:
+#    -  master
+#  image: 
+#    - Ubuntu1604
+#    - Ubuntu2004
 
 for:
   - 
@@ -102,7 +102,8 @@ for:
   -
     matrix:
       only:
-        - imagexx: Ubuntu
+        - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+        #- image: Ubuntu
 
     after_test:
     - sh: echo "after_test"
