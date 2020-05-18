@@ -10,7 +10,7 @@ environment:
   SONAR_SCANNER_OPTS: -server
   # default values
   ENABLED: true
-  # PYTHON: 3.6.10
+  PYTHON: 3.6.10
   # WEEWX: 4.0.0
   WEEWX_URL: http://www.weewx.com/downloads/released_versions/
 
@@ -103,7 +103,7 @@ for:
 
   -
     matrix:
-      except:
+      only:
         #- APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
         - image: Ubuntu
 
