@@ -69,12 +69,13 @@ environment:
 
 stack: python %PYTHON%      
 
-- branches:
-  only:
-    -  *
-  image: 
-    - Ubuntu1604
-    - Ubuntu2004
+- 
+  branches:
+    only:
+      -  *
+    image: 
+      - Ubuntu1604
+      - Ubuntu2004
 
 for:
 
