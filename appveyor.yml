@@ -10,8 +10,8 @@ environment:
   SONAR_SCANNER_OPTS: -server
   # default values
   ENABLED: true
-  PYTHON: 3.6.10
-  WEEWX: 4.0.0
+  # PYTHON: 3.6.10
+  # WEEWX: 4.0.0
   WEEWX_URL: http://www.weewx.com/downloads/released_versions/
 
   matrix:
@@ -27,7 +27,7 @@ environment:
 
     - WEEWX: 4.0.0
       PYTHON: 3.6.10
-      job_name: weewx4.0.0-py3.6.10
+      # job_name: weewx4.0.0-py3.6.10
       job_group: build
       job_depends_on: initialize
       CODECOVIO_UPLOAD: true
