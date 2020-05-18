@@ -73,7 +73,7 @@ for:
   - 
     matrix:
       only:
-      - job_name: initialize
+        - job_name: initialize
 
     install:
       - sh: echo "install unneeded"    
@@ -83,7 +83,7 @@ for:
   - 
     matrix:
       only:
-      - job_name: finalize
+        - job_name: finalize
 
     install:
       - sh: echo "install unneeded"    
@@ -95,8 +95,8 @@ for:
   -
     matrix:
       only:
-      - image: Ubuntu
-      - job_group: build2
+        - image: Ubuntu
+        - job_group: build2
 
     after_test:
       - sh: echo "after_test"
@@ -105,7 +105,7 @@ for:
   - 
     matrix:
       only:
-      - job_group: build
+        - job_group: build
 
     build_script:
       - sh: echo "build_script"
