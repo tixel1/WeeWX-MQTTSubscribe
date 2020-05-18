@@ -111,6 +111,7 @@ for:
     - sh: echo "after_test"
     #- sh: appveyor/after_test.sh
   
+  for
   - 
     matrix:
       only:
