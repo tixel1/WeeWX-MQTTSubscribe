@@ -25,7 +25,9 @@ environment:
     #  job_depends_on: initialize
     #  PYTHON: 3.7
 
-    - job_name: weewx4.0.0-py3.6.10
+    - WEEWX: 4.0.0
+      PYTHON: 3.6.10
+      job_name: weewx4.0.0-py3.6.10
       job_group: build
       job_depends_on: initialize
       CODECOVIO_UPLOAD: true
@@ -108,10 +110,6 @@ for:
     after_test:
     - sh: echo "after_test"
     #- sh: appveyor/after_test.sh
-
-    test_script:
-    - sh: echo "test_script 2"
-    #- sh: appveyor/test_script.sh
   
   - 
     matrix:
