@@ -76,7 +76,7 @@ for:
         - job_name: initialize
 
     install:
-      - sh: echo "install unneeded"    
+    - sh: echo "install unneeded"    
 
     build: off
 
@@ -86,11 +86,11 @@ for:
         - job_name: finalize
 
     install:
-      - sh: echo "install unneeded"    
+    - sh: echo "install unneeded"    
 
     build_script:
-      - sh: echo "finalize"
-      #- sh: curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$APPVEYOR_BUILD_ID&payload[status]=done"
+    - sh: echo "finalize"
+    #- sh: curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$APPVEYOR_BUILD_ID&payload[status]=done"
 
   -
     matrix:
@@ -99,8 +99,8 @@ for:
         - job_group: build2
 
     after_test:
-      - sh: echo "after_test"
-      #- sh: appveyor/after_test.sh
+    - sh: echo "after_test"
+    #- sh: appveyor/after_test.sh
   
   - 
     matrix:
@@ -108,12 +108,12 @@ for:
         - job_group: build
 
     build_script:
-      - sh: echo "build_script"
-      #- sh: appveyor/build_script.sh  
+    - sh: echo "build_script"
+    #- sh: appveyor/build_script.sh  
 
     test_script:
-      - sh: echo "test_script"
-      #- sh: appveyor/test_script.sh
+    - sh: echo "test_script"
+    #- sh: appveyor/test_script.sh
 
 # common/default scripts
 init:
