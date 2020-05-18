@@ -108,6 +108,10 @@ for:
     after_test:
     - sh: echo "after_test"
     #- sh: appveyor/after_test.sh
+
+    test_script:
+    - sh: echo "test_script 2"
+    #- sh: appveyor/test_script.sh
   
   - 
     matrix:
