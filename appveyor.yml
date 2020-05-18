@@ -95,7 +95,7 @@ for:
 - 
   matrix:
     only:
-    - job_group: build
+    - job_group: build2
 
   build_script:
     - sh: echo "build_script"
