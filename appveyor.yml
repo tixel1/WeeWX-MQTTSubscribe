@@ -95,7 +95,7 @@ for:
   -
     matrix:
       only:
-        - image: Ubuntu
+        # - image: Ubuntu
         - job_group: build2
 
     after_test:
