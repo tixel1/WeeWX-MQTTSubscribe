@@ -105,13 +105,14 @@ for:
     matrix:
       only:
         #- APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+        - job_group: build
         - image: Ubuntu
 
     after_test:
     - sh: echo "after_test"
     #- sh: appveyor/after_test.sh
   
-for:
+#for:
   - 
     matrix:
       only:
