@@ -70,6 +70,12 @@ environment:
 stack: python %PYTHON%      
 
 for:
+  - branches:
+    only:
+      -  master
+    image: 
+      - Ubuntu1604
+      - Ubuntu2004
   - 
     matrix:
       only:
