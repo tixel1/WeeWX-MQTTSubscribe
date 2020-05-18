@@ -105,11 +105,11 @@ for:
     - sh: echo "test_script"
     - sh: appveyor/test_script.sh
 
--
-  matrix:
-    only:
-    - image: Ubuntu
-    #- job_group: build
+#-
+#  matrix:
+#    only:
+#    - image: Ubuntu
+#    #- job_group: build
 
   after_test:
     - sh: echo "after_test"
