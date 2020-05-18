@@ -96,7 +96,6 @@ for:
     matrix:
       only:
         - image: Ubuntu
-          job_group: build2
 
     after_test:
     - sh: echo "after_test"
