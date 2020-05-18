@@ -95,7 +95,7 @@ for:
   -
     matrix:
       only:
-        - image: Ubuntu
+        - imagexx: Ubuntu
 
     after_test:
     - sh: echo "after_test"
