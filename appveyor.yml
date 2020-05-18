@@ -99,21 +99,21 @@ for:
 
   build_script:
     - sh: echo "build_script"
-    - sh: appveyor/build_script.sh  
+    #- sh: appveyor/build_script.sh  
 
   test_script:
     - sh: echo "test_script"
-    - sh: appveyor/test_script.sh
+    #- sh: appveyor/test_script.sh
 
-#-
-#  matrix:
-#    only:
+-
+  matrix:
+    only:
 #    - image: Ubuntu
-#    #- job_group: build
+    - job_group: build
 
   after_test:
     - sh: echo "after_test"
-    - sh: appveyor/after_test.sh
+    #- sh: appveyor/after_test.sh
 
 # common/default scripts
 init:
@@ -125,7 +125,7 @@ install:
   - sh: echo "install"
   # 'source' so that variables are set in parent environment
   - sh: source appveyor/init.sh 
-  - sh: appveyor/install.sh    
+  #- sh: appveyor/install.sh    
    
 on_finish:
   - sh: echo "on_finish"
