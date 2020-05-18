@@ -1,8 +1,8 @@
 image:
   # before enabling, need to manage code coverage better
-  - Ubuntu1604
+  #- Ubuntu1604
   - Ubuntu
-  - Ubuntu2004
+  #- Ubuntu2004
 
 environment:
   # common values
@@ -108,7 +108,7 @@ for:
 -
   matrix:
     only:
-    - image: Ubuntu
+    #- image: Ubuntu
     - job_group: build
 
   after_test:
@@ -119,6 +119,7 @@ for:
 init:
   # This runs before the commit is even checked out
   - sh: echo "init"
+  - sh: echo "$APPVEYOR_BUILD_WORKER_IMAGE"
 
 install:
   - sh: echo "install"
