@@ -67,17 +67,16 @@ environment:
       job_depends_on: build
       WEEWX_URL: http://www.weewx.com/downloads/development_versions/
 
-stack: python %PYTHON%      
+stack: python %PYTHON%  
+
+branches:
+  only:
+    -  master
+  image: 
+    - Ubuntu1604
+    - Ubuntu2004
 
 for:
-  - 
-    branches:
-      only:
-        -  master
-      image: 
-        - Ubuntu1604
-        - Ubuntu2004
-
   - 
     matrix:
       only:
