@@ -101,9 +101,9 @@ for:
 
   -
     matrix:
-      only:
-        - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
-        #- image: Ubuntu
+      except:
+        #- APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+        - image: Ubuntu
 
     after_test:
     - sh: echo "after_test"
