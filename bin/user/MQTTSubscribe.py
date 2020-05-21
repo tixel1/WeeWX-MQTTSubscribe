@@ -239,6 +239,10 @@ from weewx.engine import StdService
 import weeutil
 from weeutil.weeutil import option_as_list, to_bool, to_float, to_int, to_sorted_string
 
+VERSION = '1.5.3-cache02'
+DRIVER_NAME = 'MQTTSubscribeDriver'
+DRIVER_VERSION = VERSION
+
 # Stole from six module. Added to eliminate dependency on six when running under WeeWX 3.x
 PY2 = sys.version_info[0] == 2
 if PY2:
@@ -396,10 +400,6 @@ except ImportError: # pragma: no cover
                 print('%s: %s' % (__name__, msg))
             if self.file:
                 self.file.write('%s: %s\n' % (__name__, msg))
-
-VERSION = '1.5.3-cache01'
-DRIVER_NAME = 'MQTTSubscribeDriver'
-DRIVER_VERSION = VERSION
 
 # pylint: disable=fixme
 
@@ -1269,10 +1269,13 @@ class MQTTSubscribeService(StdService):
         target_data = {}
         for field in self.fields:
             if field in event.record:
+                timestamp = time.time()
+                self.logger.trace("MQTTSubscribeService adding %s to %s with units of %i and timestamp of %i"
+                                  % (event.record[field], field, event.record['usUnits'], timestamp))
                 self.cache.update_value(field,
                                         event.record[field],
                                         event.record['usUnits'],
-                                        time.time())
+                                        timestamp)
             else:
                 target_data[field] = self.cache.get_value(field,
                                                           time.time(),
@@ -1280,6 +1283,7 @@ class MQTTSubscribeService(StdService):
                 self.logger.trace("MQTTSubscribeService target_data after cache lookup is: %s"
                                   % to_sorted_string(target_data))
 
+        event.record.update(target_data)
         self.logger.debug("MQTTSubscribeService data-> final record is %s: %s"
                           % (weeutil.weeutil.timestamp_to_string(event.record['dateTime']),
                              to_sorted_string(event.record)))

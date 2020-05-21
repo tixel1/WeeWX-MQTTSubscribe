@@ -8,6 +8,7 @@ import unittest
 import mock
 
 import configobj
+import copy
 import random
 import string
 import time
@@ -207,7 +208,9 @@ class Testnew_archive_record(unittest.TestCase):
         config = configobj.ConfigObj(config_dict)
 
         with mock.patch('user.MQTTSubscribe.MQTTSubscribe'):
-            with mock.patch('user.MQTTSubscribe.RecordCache'):
+            with mock.patch('user.MQTTSubscribe.RecordCache') as mock_cache:
+                value = round(random.uniform(10, 100), 2)
+                type(mock_cache.return_value).get_value = mock.Mock(return_value=value)
                 # pylint: disable=no-member
                 SUT = MQTTSubscribeService(self.mock_StdEngine, config)
 
@@ -218,8 +221,12 @@ class Testnew_archive_record(unittest.TestCase):
 
                 event = test_weewx_stubs.Event(test_weewx_stubs.NEW_ARCHIVE_RECORD, record=record)
 
+                updated_record = copy.deepcopy(record)
+                updated_record.update({fieldname: value})
+
                 SUT.new_archive_record(event)
                 SUT.cache.get_value.assert_called_once()
+                self.assertEqual(record, updated_record)
 
     def test_field_exists(self):
         unit_system = random.randint(1, 10)
