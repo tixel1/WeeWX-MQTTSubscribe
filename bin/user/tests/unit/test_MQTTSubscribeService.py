@@ -197,7 +197,8 @@ class Testnew_archive_record(unittest.TestCase):
     def test_field_missing(self):
         unit_system = random.randint(1, 10)
         fieldname = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
-        config_dict = {
+        config_dict = {}
+        config_dict['MQTTSubscribeService'] = {
             'archive_field_cache': {
                 'fields': {
                     fieldname: {}
@@ -231,7 +232,8 @@ class Testnew_archive_record(unittest.TestCase):
     def test_field_exists(self):
         unit_system = random.randint(1, 10)
         fieldname = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
-        config_dict = {
+        config_dict = {}
+        config_dict['MQTTSubscribeService'] = {
             'archive_field_cache': {
                 'fields': {
                     fieldname: {}
