@@ -239,7 +239,7 @@ from weewx.engine import StdService
 import weeutil
 from weeutil.weeutil import option_as_list, to_bool, to_float, to_int, to_sorted_string
 
-VERSION = '1.5.3-cache02'
+VERSION = '1.5.3-cache03'
 DRIVER_NAME = 'MQTTSubscribeDriver'
 DRIVER_VERSION = VERSION
 
@@ -1191,7 +1191,7 @@ class MQTTSubscribeService(StdService):
 
         self.logger.info("MQTTSubscribeService binding is %s" % self.binding)
 
-        archive_field_cache_dict = config_dict.get('archive_field_cache', None)
+        archive_field_cache_dict = service_dict.get('archive_field_cache', None)
         self.fields = {}
         if archive_field_cache_dict is not None:
             unit_system_name = archive_field_cache_dict.get('unit_system', 'US').strip().upper()
