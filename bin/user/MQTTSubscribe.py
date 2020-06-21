@@ -230,6 +230,13 @@ Configuration:
         max_queue = MAXSIZE
 
         [[[first/topic]]]
+            # Specifies a field name in the mqtt message.
+            # The value of the field is appended to every field name in the mqtt message.
+            # This enables same formatted messages to map to different WeeWX fields.
+            # Default is None.
+            # Only used with json payloads.
+            msg_id = None
+
             # The incoming field name from MQTT.
             [[[[temp1]]]
                 # The WeeWX name.
@@ -265,6 +272,11 @@ Configuration:
                 # EXPERIMENTAL - may be removed
                 # expires_after = None
 
+                # When True, the value in the field specified in msg_id is not appended to the fieldname in the mqtt message.
+                # Valid values: True, False
+                # Default is False
+                ignore_msg_id = False
+
         [[[second/topic]]]
 """
 
@@ -291,7 +303,7 @@ from weewx.engine import StdService
 import weeutil
 from weeutil.weeutil import option_as_list, to_bool, to_float, to_int, to_sorted_string
 
-VERSION = '1.5.3'
+VERSION = '1.5.4-rc01'
 DRIVER_NAME = 'MQTTSubscribeDriver'
 DRIVER_VERSION = VERSION
 
@@ -535,6 +547,8 @@ class TopicManager(object):
 
         self.logger.debug("TopicManager config is %s" % config)
 
+        default_msg_id_field = config.get('msg_id_field', None)
+        default_ignore_msg_id = config.get('ignore_msg_id', False)
         default_qos = to_int(config.get('qos', 0))
         default_use_server_datetime = to_bool(config.get('use_server_datetime', False))
         default_ignore_start_time = to_bool(config.get('ignore_start_time', False))
@@ -562,6 +576,8 @@ class TopicManager(object):
         for topic in config.sections:
             topic_dict = config.get(topic, {})
 
+            msg_id_field = topic_dict.get('msg_id_field', default_msg_id_field)
+            ignore_msg_id = topic_dict.get('ignore_msg_id', default_ignore_msg_id)
             qos = to_int(topic_dict.get('qos', default_qos))
             use_server_datetime = to_bool(topic_dict.get('use_server_datetime',
                                                          default_use_server_datetime))
@@ -583,6 +599,7 @@ class TopicManager(object):
             self.subscribed_topics[topic] = {}
             self.subscribed_topics[topic]['type'] = 'normal'
             self.subscribed_topics[topic]['unit_system'] = unit_system
+            self.subscribed_topics[topic]['msg_id_field'] = msg_id_field
             self.subscribed_topics[topic]['qos'] = qos
             self.subscribed_topics[topic]['use_server_datetime'] = use_server_datetime
             self.subscribed_topics[topic]['ignore_start_time'] = ignore_start_time
@@ -591,7 +608,8 @@ class TopicManager(object):
             self.subscribed_topics[topic]['adjust_end_time'] = adjust_end_time
             self.subscribed_topics[topic]['datetime_format'] = datetime_format
             self.subscribed_topics[topic]['offset_format'] = offset_format
-            self.subscribed_topics[topic]['ignore'] = fields_contains_total_default
+            self.subscribed_topics[topic]['ignore'] = fields_ignore_default
+            self.subscribed_topics[topic]['contains_total'] = fields_contains_total_default
             self.subscribed_topics[topic]['max_queue'] = topic_dict.get('max_queue', max_queue)
             self.subscribed_topics[topic]['queue'] = deque()
 
@@ -599,6 +617,7 @@ class TopicManager(object):
                 self.managing_fields = True
 
             self.subscribed_topics[topic]['fields'] = {}
+            self.subscribed_topics[topic]['ignore_msg_id'] = []
             for field in topic_dict.sections:
                 self.subscribed_topics[topic]['fields'][field] = {}
                 self.subscribed_topics[topic]['fields'][field]['name'] = (topic_dict[field]).get('name', field)
@@ -607,6 +626,8 @@ class TopicManager(object):
                     to_bool((topic_dict[field]).get('contains_total', fields_contains_total_default))
                 self.subscribed_topics[topic]['fields'][field]['conversion_type'] = \
                     (topic_dict[field]).get('conversion_type', fields_conversion_type_default)
+                if to_bool((topic_dict[field]).get('ignore_msg_id', ignore_msg_id)):
+                    self.subscribed_topics[topic]['ignore_msg_id'].append(field)
                 if 'expires_after' in topic_dict[field]:
                     self.record_cache[field] = {}
                     self.record_cache[field]['expires_after'] = to_float(topic_dict[field]['expires_after'])
@@ -805,6 +826,18 @@ class TopicManager(object):
         """ Get the unit system """
         return self._get_value('unit_system', topic)
 
+    def get_msg_id_field(self, topic):
+        """ Get the msg_id_field value """
+        return self._get_value('msg_id_field', topic)
+
+    def get_ignore_value(self, topic):
+        """ Get the ignore value """
+        return self._get_value('ignore', topic)
+
+    def get_ignore_msg_id(self, topic):
+        """ Get the ignore_msg_id value """
+        return self._get_value('ignore_msg_id', topic)
+
     def _get_max_queue(self, topic):
         return self._get_value('max_queue', topic)
 
@@ -975,9 +1008,15 @@ class MessageCallbackProvider(object):
 
         return self.fields
 
+    def _get_msg_id_field(self, topic):
+        return self.topic_manager.get_msg_id_field(topic)
+
+    def _get_ignore_msg_id(self, topic):
+        return self.topic_manager.get_ignore_msg_id(topic)
+
     def _get_ignore_default(self, topic):
         if self.topic_manager.managing_fields:
-            return self.topic_manager.get_fields(topic)['topic']
+            return self.topic_manager.get_ignore_value(topic)
 
         return self.fields_ignore_default
 
@@ -1066,6 +1105,8 @@ class MessageCallbackProvider(object):
             self._log_message(msg)
             fields = self._get_fields(msg.topic)
             fields_ignore_default = self._get_ignore_default(msg.topic)
+            msg_id_field = self._get_msg_id_field(msg.topic)
+            ignore_msg_id = self._get_ignore_msg_id(msg.topic)
 
             if PY2:
                 payload_str = msg.payload
@@ -1080,10 +1121,14 @@ class MessageCallbackProvider(object):
 
             unit_system = self.topic_manager.get_unit_system(msg.topic) # TODO - need public method
             data_final = {}
+            if msg_id_field:
+                msg_id = data_flattened[msg_id_field]
             # ToDo - if I have to loop, removes benefit of _bytefy, time to remove it?
             for key in data_flattened:
                 if self.full_topic_fieldname:
                     lookup_key = topic_str + "/" + key # todo - cleanup and test unicode vs str stuff
+                elif msg_id_field and key not in ignore_msg_id:
+                    lookup_key = key + "_" + str(msg_id) # todo - cleanup
                 else:
                     lookup_key = key
                 if not fields.get(lookup_key, {}).get('ignore', fields_ignore_default):
