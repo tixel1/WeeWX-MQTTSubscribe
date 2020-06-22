@@ -235,7 +235,7 @@ Configuration:
             # This enables same formatted messages to map to different WeeWX fields.
             # Default is None.
             # Only used with json payloads.
-            msg_id = None
+            msg_id_field = None
 
             # The incoming field name from MQTT.
             [[[[temp1]]]
@@ -272,10 +272,10 @@ Configuration:
                 # EXPERIMENTAL - may be removed
                 # expires_after = None
 
-                # When True, the value in the field specified in msg_id is not appended to the fieldname in the mqtt message.
+                # When True, the value in the field specified in msg_id_field is not appended to the fieldname in the mqtt message.
                 # Valid values: True, False
                 # Default is False
-                ignore_msg_id = False
+                ignore_msg_id_field = False
 
         [[[second/topic]]]
 """
@@ -471,8 +471,8 @@ except ImportError: # pragma: no cover
 
 class RecordCache(object):
     """ Manage the cache. """
-    def __init__(self, unit_system):
-        self.unit_system = unit_system
+    def __init__(self):
+        self.unit_system = None
         self.cached_values = {}
 
     def get_value(self, key, timestamp, expires_after):
@@ -485,6 +485,8 @@ class RecordCache(object):
 
     def update_value(self, key, value, unit_system, timestamp):
         """ Update the cached value. """
+        if self.unit_system is None:
+            self.unit_system = unit_system
         if unit_system != self.unit_system:
             raise ValueError("Unit system does not match unit system of the cache. %s vs %s"
                              % (unit_system, self.unit_system))
@@ -548,7 +550,7 @@ class TopicManager(object):
         self.logger.debug("TopicManager config is %s" % config)
 
         default_msg_id_field = config.get('msg_id_field', None)
-        default_ignore_msg_id = config.get('ignore_msg_id', False)
+        default_ignore_msg_id_field = config.get('ignore_msg_id_field', False)
         default_qos = to_int(config.get('qos', 0))
         default_use_server_datetime = to_bool(config.get('use_server_datetime', False))
         default_ignore_start_time = to_bool(config.get('ignore_start_time', False))
@@ -577,7 +579,7 @@ class TopicManager(object):
             topic_dict = config.get(topic, {})
 
             msg_id_field = topic_dict.get('msg_id_field', default_msg_id_field)
-            ignore_msg_id = topic_dict.get('ignore_msg_id', default_ignore_msg_id)
+            ignore_msg_id_field = topic_dict.get('ignore_msg_id_field', default_ignore_msg_id_field)
             qos = to_int(topic_dict.get('qos', default_qos))
             use_server_datetime = to_bool(topic_dict.get('use_server_datetime',
                                                          default_use_server_datetime))
@@ -617,7 +619,7 @@ class TopicManager(object):
                 self.managing_fields = True
 
             self.subscribed_topics[topic]['fields'] = {}
-            self.subscribed_topics[topic]['ignore_msg_id'] = []
+            self.subscribed_topics[topic]['ignore_msg_id_field'] = []
             for field in topic_dict.sections:
                 self.subscribed_topics[topic]['fields'][field] = {}
                 self.subscribed_topics[topic]['fields'][field]['name'] = (topic_dict[field]).get('name', field)
@@ -626,8 +628,8 @@ class TopicManager(object):
                     to_bool((topic_dict[field]).get('contains_total', fields_contains_total_default))
                 self.subscribed_topics[topic]['fields'][field]['conversion_type'] = \
                     (topic_dict[field]).get('conversion_type', fields_conversion_type_default)
-                if to_bool((topic_dict[field]).get('ignore_msg_id', ignore_msg_id)):
-                    self.subscribed_topics[topic]['ignore_msg_id'].append(field)
+                if to_bool((topic_dict[field]).get('ignore_msg_id_field', ignore_msg_id_field)):
+                    self.subscribed_topics[topic]['ignore_msg_id_field'].append(field)
                 if 'expires_after' in topic_dict[field]:
                     self.record_cache[field] = {}
                     self.record_cache[field]['expires_after'] = to_float(topic_dict[field]['expires_after'])
@@ -834,9 +836,9 @@ class TopicManager(object):
         """ Get the ignore value """
         return self._get_value('ignore', topic)
 
-    def get_ignore_msg_id(self, topic):
-        """ Get the ignore_msg_id value """
-        return self._get_value('ignore_msg_id', topic)
+    def get_ignore_msg_id_field(self, topic):
+        """ Get the ignore_msg_id_field value """
+        return self._get_value('ignore_msg_id_field', topic)
 
     def _get_max_queue(self, topic):
         return self._get_value('max_queue', topic)
@@ -1011,8 +1013,8 @@ class MessageCallbackProvider(object):
     def _get_msg_id_field(self, topic):
         return self.topic_manager.get_msg_id_field(topic)
 
-    def _get_ignore_msg_id(self, topic):
-        return self.topic_manager.get_ignore_msg_id(topic)
+    def _get_ignore_msg_id_field(self, topic):
+        return self.topic_manager.get_ignore_msg_id_field(topic)
 
     def _get_ignore_default(self, topic):
         if self.topic_manager.managing_fields:
@@ -1106,7 +1108,7 @@ class MessageCallbackProvider(object):
             fields = self._get_fields(msg.topic)
             fields_ignore_default = self._get_ignore_default(msg.topic)
             msg_id_field = self._get_msg_id_field(msg.topic)
-            ignore_msg_id = self._get_ignore_msg_id(msg.topic)
+            ignore_msg_id_field = self._get_ignore_msg_id_field(msg.topic)
 
             if PY2:
                 payload_str = msg.payload
@@ -1127,7 +1129,7 @@ class MessageCallbackProvider(object):
             for key in data_flattened:
                 if self.full_topic_fieldname:
                     lookup_key = topic_str + "/" + key # todo - cleanup and test unicode vs str stuff
-                elif msg_id_field and key not in ignore_msg_id:
+                elif msg_id_field and key not in ignore_msg_id_field:
                     lookup_key = key + "_" + str(msg_id) # todo - cleanup
                 else:
                     lookup_key = key
@@ -1369,17 +1371,13 @@ class MQTTSubscribeService(StdService):
             self.logger.info("'archive_field_cache' is deprecated, use '[[topics]][[[topic name]]][[[[field name]]]]'")
             if self.subscriber.record_cache is not None:
                 self.logger.trace("Ignoring archive_field_cache configration and using topics/fields configuration.")
-            unit_system_name = archive_field_cache_dict.get('unit_system', 'US').strip().upper()
-            if unit_system_name not in weewx.units.unit_constants:
-                raise ValueError("archive_field_cache: Unknown unit system: %s" % unit_system_name)
-            unit_system = weewx.units.unit_constants[unit_system_name]
 
             fields_dict = archive_field_cache_dict.get('fields', {})
             for field in archive_field_cache_dict.get('fields', {}):
                 self.cached_fields[field] = {}
                 self.cached_fields[field]['expires_after'] = to_float(fields_dict[field].get('expires_after', None))
 
-            self.cache = RecordCache(unit_system)
+            self.cache = RecordCache()
 
         self.logger.info("archive_field_cache_dict is %s" % archive_field_cache_dict)
 
