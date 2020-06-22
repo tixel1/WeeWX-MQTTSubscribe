@@ -243,6 +243,21 @@ Configuration:
                 # Default is the name from MQTT.
                 name = extraTemp1
 
+                # When True, the value in the field specified in msg_id_field is not appended to the fieldname in the mqtt message.
+                # Valid values: True, False
+                # Default is False
+                ignore_msg_id_field = False
+
+                # True if the incoming data should not be processed into WeeWX.
+                # Valid values: True, False
+                # Default is False
+                ignore = False
+
+                # True if the incoming data is cumulative.
+                # Valid values: True, False
+                # Default is False
+                contains_total = False
+
                 # The conversion type necessary for WeeWX compatibility
                 # Valid values: bool, float, int, none
                 # Default is float
@@ -254,15 +269,6 @@ Configuration:
                 # Default is not set
                 # units = km_per_hour
 
-                # True if the incoming data is cumulative.
-                # Valid values: True, False
-                # Default is False
-                contains_total = False
-
-                # True if the incoming data should not be processed into WeeWX.
-                # Valid values: True, False
-                # Default is False
-                ignore = False
 
                 # In seconds how long the cache is valid.
                 # Value of 0 means the cache is always expired.
@@ -272,10 +278,6 @@ Configuration:
                 # EXPERIMENTAL - may be removed
                 # expires_after = None
 
-                # When True, the value in the field specified in msg_id_field is not appended to the fieldname in the mqtt message.
-                # Valid values: True, False
-                # Default is False
-                ignore_msg_id_field = False
 
         [[[second/topic]]]
 """
@@ -622,21 +624,21 @@ class TopicManager(object):
             for field in topic_dict.sections:
                 self.subscribed_topics[topic]['fields'][field] = {}
                 self.subscribed_topics[topic]['fields'][field]['name'] = (topic_dict[field]).get('name', field)
+                if to_bool((topic_dict[field]).get('ignore_msg_id_field', ignore_msg_id_field)):
+                    self.subscribed_topics[topic]['ignore_msg_id_field'].append(field)
                 self.subscribed_topics[topic]['fields'][field]['ignore'] = to_bool((topic_dict[field]).get('ignore', ignore))
                 self.subscribed_topics[topic]['fields'][field]['contains_total'] = \
                     to_bool((topic_dict[field]).get('contains_total', contains_total))
                 self.subscribed_topics[topic]['fields'][field]['conversion_type'] = \
                     (topic_dict[field]).get('conversion_type', conversion_type)
-                if to_bool((topic_dict[field]).get('ignore_msg_id_field', ignore_msg_id_field)):
-                    self.subscribed_topics[topic]['ignore_msg_id_field'].append(field)
-                if 'expires_after' in topic_dict[field]:
-                    self.cached_fields[field] = {}
-                    self.cached_fields[field]['expires_after'] = to_float(topic_dict[field]['expires_after'])
                 if 'units' in topic_dict[field]:
                     if topic_dict[field]['units'] in weewx.units.conversionDict:
                         self.subscribed_topics[topic]['fields'][field]['units'] = topic_dict[field]['units']
                     else:
                         raise ValueError("For %s invalid units, %s" % (field, topic_dict[field]['units']))
+                if 'expires_after' in topic_dict[field]:
+                    self.cached_fields[field] = {}
+                    self.cached_fields[field]['expires_after'] = to_float(topic_dict[field]['expires_after'])
 
         # Add the collector queue as a subscribed topic so that data can retrieved from it
         # Yes, this is a bit of a hack.
