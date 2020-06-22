@@ -560,9 +560,9 @@ class TopicManager(object):
         default_adjust_end_time = to_float(config.get('adjust_end_time', 0))
         default_datetime_format = config.get('datetime_format', None)
         default_offset_format = config.get('offset_format', None)
-        ignore_default = to_bool(config.get('ignore', False))
-        contains_total_default = to_bool(config.get('contains_total', False))
-        conversion_type_default = config.get('conversion_type', 'float')
+        default_ignore = to_bool(config.get('ignore', False))
+        default_contains_total = to_bool(config.get('contains_total', False))
+        default_conversion_type = config.get('conversion_type', 'float')
 
         default_unit_system_name = config.get('unit_system', 'US').strip().upper()
         if default_unit_system_name not in weewx.units.unit_constants:
@@ -589,9 +589,9 @@ class TopicManager(object):
             adjust_end_time = to_float(topic_dict.get('adjust_end_time', default_adjust_end_time))
             datetime_format = topic_dict.get('datetime_format', default_datetime_format)
             offset_format = topic_dict.get('offset_format', default_offset_format)
-            fields_ignore_default = to_bool(topic_dict.get('ignore', ignore_default))
-            fields_contains_total_default = to_bool(topic_dict.get('contains_total', contains_total_default))
-            fields_conversion_type_default = topic_dict.get('conversion_type', conversion_type_default)
+            fields_ignore_default = to_bool(topic_dict.get('ignore', default_ignore))
+            fields_contains_total_default = to_bool(topic_dict.get('contains_total', default_contains_total))
+            fields_conversion_type_default = topic_dict.get('conversion_type', default_conversion_type)
 
             unit_system_name = topic_dict.get('unit_system', default_unit_system_name).strip().upper()
             if unit_system_name not in weewx.units.unit_constants:
