@@ -589,9 +589,9 @@ class TopicManager(object):
             adjust_end_time = to_float(topic_dict.get('adjust_end_time', default_adjust_end_time))
             datetime_format = topic_dict.get('datetime_format', default_datetime_format)
             offset_format = topic_dict.get('offset_format', default_offset_format)
-            fields_ignore_default = to_bool(topic_dict.get('ignore', default_ignore))
-            fields_contains_total_default = to_bool(topic_dict.get('contains_total', default_contains_total))
-            fields_conversion_type_default = topic_dict.get('conversion_type', default_conversion_type)
+            ignore = to_bool(topic_dict.get('ignore', default_ignore))
+            contains_total = to_bool(topic_dict.get('contains_total', default_contains_total))
+            conversion_type = topic_dict.get('conversion_type', default_conversion_type)
 
             unit_system_name = topic_dict.get('unit_system', default_unit_system_name).strip().upper()
             if unit_system_name not in weewx.units.unit_constants:
@@ -610,8 +610,8 @@ class TopicManager(object):
             self.subscribed_topics[topic]['adjust_end_time'] = adjust_end_time
             self.subscribed_topics[topic]['datetime_format'] = datetime_format
             self.subscribed_topics[topic]['offset_format'] = offset_format
-            self.subscribed_topics[topic]['ignore'] = fields_ignore_default
-            self.subscribed_topics[topic]['contains_total'] = fields_contains_total_default
+            self.subscribed_topics[topic]['ignore'] = ignore
+            self.subscribed_topics[topic]['contains_total'] = contains_total
             self.subscribed_topics[topic]['max_queue'] = topic_dict.get('max_queue', max_queue)
             self.subscribed_topics[topic]['queue'] = deque()
 
@@ -623,11 +623,11 @@ class TopicManager(object):
             for field in topic_dict.sections:
                 self.subscribed_topics[topic]['fields'][field] = {}
                 self.subscribed_topics[topic]['fields'][field]['name'] = (topic_dict[field]).get('name', field)
-                self.subscribed_topics[topic]['fields'][field]['ignore'] = to_bool((topic_dict[field]).get('ignore', fields_ignore_default))
+                self.subscribed_topics[topic]['fields'][field]['ignore'] = to_bool((topic_dict[field]).get('ignore', ignore))
                 self.subscribed_topics[topic]['fields'][field]['contains_total'] = \
-                    to_bool((topic_dict[field]).get('contains_total', fields_contains_total_default))
+                    to_bool((topic_dict[field]).get('contains_total', contains_total))
                 self.subscribed_topics[topic]['fields'][field]['conversion_type'] = \
-                    (topic_dict[field]).get('conversion_type', fields_conversion_type_default)
+                    (topic_dict[field]).get('conversion_type', conversion_type)
                 if to_bool((topic_dict[field]).get('ignore_msg_id_field', ignore_msg_id_field)):
                     self.subscribed_topics[topic]['ignore_msg_id_field'].append(field)
                 if 'expires_after' in topic_dict[field]:
