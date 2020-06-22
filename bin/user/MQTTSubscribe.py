@@ -611,7 +611,6 @@ class TopicManager(object):
             self.subscribed_topics[topic]['datetime_format'] = datetime_format
             self.subscribed_topics[topic]['offset_format'] = offset_format
             self.subscribed_topics[topic]['ignore'] = ignore
-            self.subscribed_topics[topic]['contains_total'] = contains_total
             self.subscribed_topics[topic]['max_queue'] = topic_dict.get('max_queue', max_queue)
             self.subscribed_topics[topic]['queue'] = deque()
 
