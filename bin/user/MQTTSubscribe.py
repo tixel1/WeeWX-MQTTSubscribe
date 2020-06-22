@@ -573,7 +573,7 @@ class TopicManager(object):
         self.topics = {}
         self.subscribed_topics = {}
         self.managing_fields = False
-        self.record_cache = {}
+        self.cached_fields = {}
 
         for topic in config.sections:
             topic_dict = config.get(topic, {})
@@ -631,8 +631,8 @@ class TopicManager(object):
                 if to_bool((topic_dict[field]).get('ignore_msg_id_field', ignore_msg_id_field)):
                     self.subscribed_topics[topic]['ignore_msg_id_field'].append(field)
                 if 'expires_after' in topic_dict[field]:
-                    self.record_cache[field] = {}
-                    self.record_cache[field]['expires_after'] = to_float(topic_dict[field]['expires_after'])
+                    self.cached_fields[field] = {}
+                    self.cached_fields[field]['expires_after'] = to_float(topic_dict[field]['expires_after'])
                 if 'units' in topic_dict[field]:
                     if topic_dict[field]['units'] in weewx.units.conversionDict:
                         self.subscribed_topics[topic]['fields'][field]['units'] = topic_dict[field]['units']
@@ -662,7 +662,7 @@ class TopicManager(object):
         self.subscribed_topics[topic]['queue'] = self.collected_queue
 
         self.logger.debug("TopicManager self.subscribed_topics is %s" % self.subscribed_topics)
-        self.logger.debug("TopicManager self.record_cache is %s" % self.record_cache)
+        self.logger.debug("TopicManager self.cached_fields is %s" % self.cached_fields)
 
     def append_data(self, topic, in_data, fieldname=None):
         """ Add the MQTT data to the queue. """
@@ -1207,9 +1207,9 @@ class MQTTSubscribe(object):
                                                           'user.MQTTSubscribe.MessageCallbackProvider')
         self.manager = TopicManager(topics_dict, self.logger)
 
-        self.record_cache = None
+        self.cached_fields = None
         if self.manager.managing_fields:
-            self.record_cache = self.manager.record_cache
+            self.cached_fields = self.manager.cached_fields
 
         clientid = service_dict.get('clientid',
                                     'MQTTSubscribe-' + str(random.randint(1000, 9999)))
@@ -1369,7 +1369,7 @@ class MQTTSubscribeService(StdService):
         self.cached_fields = {}
         if archive_field_cache_dict is not None:
             self.logger.info("'archive_field_cache' is deprecated, use '[[topics]][[[topic name]]][[[[field name]]]]'")
-            if self.subscriber.record_cache is not None:
+            if self.subscriber.cached_fields is not None:
                 self.logger.trace("Ignoring archive_field_cache configration and using topics/fields configuration.")
 
             fields_dict = archive_field_cache_dict.get('fields', {})
@@ -1441,8 +1441,8 @@ class MQTTSubscribeService(StdService):
                                      to_sorted_string(event.record)))
 
 
-        if self.subscriber.record_cache is not None:
-            cached_fields = self.subscriber.record_cache
+        if self.subscriber.cached_fields is not None:
+            cached_fields = self.subscriber.cached_fields
         else:
             cached_fields = self.cached_fields
 
