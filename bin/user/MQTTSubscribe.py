@@ -907,11 +907,11 @@ class MessageCallbackProvider(object):
         if self.type not in self.callbacks:
             raise ValueError("Invalid type configured: %s" % self.type)
 
-        if self.topic_manager.managing_fields:
+        self.fields = config.get('fields', {})
+        orig_fields = config.get('fields', {})
+        if self.topic_manager.managing_fields and self.fields:
             self.logger.debug("MessageCallbackProvider ignoring fields configuration and using topics/fields configuration.")
         else:
-            self.fields = config.get('fields', {})
-            orig_fields = config.get('fields', {})
             self.fields_ignore_default = to_bool(self.fields.get('ignore', False))
             if self.fields:
                 self.logger.info("'fields' is deprecated, use '[[topics]][[[topic name]]][[[[field name]]]]'")
