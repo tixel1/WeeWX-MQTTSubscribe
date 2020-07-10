@@ -76,31 +76,12 @@ Configuration:
     # Only used by the driver.
     archive_topic = None
 
-    #     # The WeeWX fields to cache.
-    #     [[[fields]]]
-    #         # The name of the field to cache.
-    #         [[[[fieldname]]]]
-    #             # In seconds how long the cache is valid.
-    #             # Value of 0 means the cache is always expired.
-    #             # Useful if missing fields should have a value of None instead of the previous value.
-    #             # Value of None means the cache never expires.
-    #             # Default is None.
-    #             expires_after = None
-
     # Configuration for the message callback.
     [[message_callback]]
         # The format of the MQTT payload.
         # Currently support: individual, json, keyword.
         # Must be specified.
         type = REPLACE_ME
-
-        # When True, the full topic (weather/outTemp) is used as the fieldname.
-        # When false, the topic furthest to the right is used.
-        # Valid values: True, False.
-        # Default is False.
-        # Only used when type is 'individual'.
-        # DEPRECATED - use [[topics]]/[[[topic name]]]/[[[[field name]]]]
-        full_topic_fieldname = False
 
         # When the json is nested, the delimiter between the hierarchies.
         # Default is _.
@@ -960,9 +941,6 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
         self.keyword_separator = config.get('keyword_separator', '=')
         contains_total = option_as_list(config.get('contains_total', []))
         label_map = config.get('label_map', {})
-        self.full_topic_fieldname = to_bool(config.get('full_topic_fieldname', False))
-        if self.full_topic_fieldname:
-            self.logger.info("'full_topic_fieldname' is deprecated, use '[[topics]][[[topic name]]][[[[field name]]]]'")
 
         if self.type not in self.callbacks:
             raise ValueError("Invalid type configured: %s" % self.type)
@@ -1132,10 +1110,8 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
 
             if PY2:
                 payload_str = msg.payload
-                topic_str = msg.topic.encode('utf-8')
             else:
                 payload_str = msg.payload.decode('utf-8')
-                topic_str = msg.topic
 
             data = self._byteify(json.loads(payload_str, object_hook=self._byteify), ignore_dicts=True)
 
@@ -1147,9 +1123,7 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
                 msg_id = data_flattened[msg_id_field]
             # ToDo - if I have to loop, removes benefit of _bytefy, time to remove it?
             for key in data_flattened:
-                if self.full_topic_fieldname:
-                    lookup_key = topic_str + "/" + key # todo - cleanup and test unicode vs str stuff
-                elif msg_id_field and key not in ignore_msg_id_field:
+                if msg_id_field and key not in ignore_msg_id_field:
                     lookup_key = key + "_" + str(msg_id) # todo - cleanup
                 else:
                     lookup_key = key
@@ -1172,19 +1146,13 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
             self._log_message(msg)
             fields = self._get_fields(msg.topic)
             fields_ignore_default = self._get_ignore_default(msg.topic)
-            if self.topic_manager.managing_fields:
-                full_topic_fieldname = True
-            elif self.full_topic_fieldname:
-                full_topic_fieldname = self.full_topic_fieldname
-            else:
-                full_topic_fieldname = False
 
             payload_str = msg.payload
             if not PY2:
                 if msg.payload is not None:
                     payload_str = msg.payload.decode('utf-8')
 
-            if full_topic_fieldname:
+            if self.topic_manager.managing_fields:
                 key = msg.topic
             else:
                 key = msg.topic.rpartition('/')[2]

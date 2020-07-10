@@ -1759,7 +1759,7 @@ class TestIndividualPayloadFullTopicFieldName(unittest.TestCase):
         msg = Msg(self.topic, None, 0, 0)
 
         SUT._on_message_individual(None, None, msg)
-        mock_manager.append_data.assert_called_once_with(msg.topic, {msg.topic: None}, msg.topic)
+        mock_manager.append_data.assert_called_once_with(msg.topic, {self.topic_end: None}, self.topic_end)
 
     def test_single_topic(self):
         mock_manager = mock.Mock(spec=TopicManager)
@@ -1784,9 +1784,11 @@ class TestIndividualPayloadFullTopicFieldName(unittest.TestCase):
     def test_multiple_topics(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
+        mock_manager.managing_fields = True
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = None
+        mock_manager.get_fields.return_value = {'use_topic_as_fieldname': True}
 
         message_handler_config_dict = dict(self.message_handler_config_dict)
         message_handler_config_dict['full_topic_fieldname'] = True
@@ -1807,9 +1809,11 @@ class TestIndividualPayloadFullTopicFieldName(unittest.TestCase):
     def test_two_topics(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
+        mock_manager.managing_fields = True
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = None
+        mock_manager.get_fields.return_value = {'use_topic_as_fieldname': True}
 
         message_handler_config_dict = dict(self.message_handler_config_dict)
         message_handler_config_dict['full_topic_fieldname'] = True
