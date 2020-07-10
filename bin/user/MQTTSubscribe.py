@@ -939,7 +939,6 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
         self.flatten_delimiter = config.get('flatten_delimiter', '_')
         self.keyword_delimiter = config.get('keyword_delimiter', ',')
         self.keyword_separator = config.get('keyword_separator', '=')
-        contains_total = option_as_list(config.get('contains_total', []))
         label_map = config.get('label_map', {})
 
         if self.type not in self.callbacks:
@@ -955,7 +954,7 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
                 self.logger.info("'fields' is deprecated, use '[[topics]][[[topic name]]][[[[field name]]]]'")
                 self._configure_fields()
 
-            self.set_backwards_compatibility(label_map, orig_fields, contains_total)
+            self.set_backwards_compatibility(label_map, orig_fields)
             self.logger.debug("MessageCallbackProvider self.fields is %s" % self.fields)
 
     def _configure_fields(self):
@@ -971,7 +970,7 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
                 except KeyError:
                     raise ValueError("For %s invalid units, %s" % (field, self.fields[field]['units']))
 
-    def set_backwards_compatibility(self, label_map, orig_fields, contains_total):
+    def set_backwards_compatibility(self, label_map, orig_fields):
         """ Any config for backwards compatibility. """
         # backwards compatible, add the label map
         # ToDo - fix side affect of setting self.fields
@@ -980,16 +979,6 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
                 self.fields[field] = {}
             if not 'name' in self.fields[field]:
                 self.fields[field]['name'] = label_map[field]
-
-        # backwards compatible, add the cumulative fields
-        for field in contains_total:
-            if not field in orig_fields:
-                if not field in self.fields:
-                    value = {}
-                    value['contains_total'] = True
-                    self.fields[field] = value
-                else:
-                    self.fields[field]['contains_total'] = True
 
     def get_callback(self):
         """ Get the MQTT callback. """
