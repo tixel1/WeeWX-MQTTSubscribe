@@ -60,15 +60,6 @@ Configuration:
     # Only used by the service.
     enable = false
 
-    # The amount of time in seconds to overlap the start time when processing the MQTT queue.
-    # When the time of the MQTT payload is less than the end time of the previous packet/record,
-    # the MQTT payload is ignored. When overlap is set, MQTT payloads within this number of seconds
-    # of the previous end time will be processed.
-    # Default is 0.
-    # Only used by the service.
-    # DEPRECATED  - use adjust_start_time
-    # overlap = 0
-
     # The binding, loop or archive.
     # Default is loop.
     # Only used by the service.
@@ -559,8 +550,7 @@ class TopicManager(object):
         default_use_server_datetime = to_bool(config.get('use_server_datetime', False))
         default_ignore_start_time = to_bool(config.get('ignore_start_time', False))
         default_ignore_end_time = to_bool(config.get('ignore_end_time', False))
-        overlap = to_float(config.get('overlap', 0)) # Backwards compatibility
-        default_adjust_start_time = to_float(config.get('adjust_start_time', overlap))
+        default_adjust_start_time = to_float(config.get('adjust_start_time', 0))
         default_adjust_end_time = to_float(config.get('adjust_end_time', 0))
         default_datetime_format = config.get('datetime_format', None)
         default_offset_format = config.get('offset_format', None)
@@ -1222,8 +1212,6 @@ class MQTTSubscribe(object):
 
         if 'topic' in service_dict:
             self.logger.info("'topic' is deprecated, use '[[topics]][[[topic name]]]'")
-        if 'overlap' in service_dict:
-            self.logger.info("'overlap' is deprecated, use 'adjust_start_time'")
         if 'contains_total' in service_dict['message_callback']:
             self.logger.info("'contains_total' is deprecated use '[[topics]][[[topic name]]][[[[field name]]]]' contains_total setting.")
         if 'label_map' in service_dict['message_callback']:
@@ -1233,11 +1221,7 @@ class MQTTSubscribe(object):
         if message_callback_config is None:
             raise ValueError("[[message_callback]] is required.")
 
-        # For backwards compatibility
-        overlap = to_float(service_dict.get('overlap', 0))
-        self.logger.info("overlap is %s" % overlap)
         topics_dict = service_dict.get('topics', {})
-        topics_dict['overlap'] = overlap
 
         message_callback_provider_name = service_dict.get('message_callback_provider',
                                                           'user.MQTTSubscribe.MessageCallbackProvider')
