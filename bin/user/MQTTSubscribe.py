@@ -85,17 +85,6 @@ Configuration:
     # Only used by the driver.
     archive_topic = None
 
-    # DEPRECATED - move the expires_after under the [[topics]]/[[[topic name]]][[[[field name]]]]
-    # Fields in this section will be cached.
-    # If the field is not in the current archive record, its value will be retrieved from the cache.
-    # Only used by the service.
-    # EXPERIMENTAL - may be removed
-    # [[archive_field_cache]]
-    #     # The unit system of the cache.
-    #     # This must match the unit_system of the archive record.
-    #     # Default is US.
-    #     unit_system = US
-    #
     #     # The WeeWX fields to cache.
     #     [[[fields]]]
     #         # The name of the field to cache.
@@ -1412,27 +1401,13 @@ class MQTTSubscribeService(StdService):
 
         self.logger.info("binding is %s" % self.binding)
 
-        archive_field_cache_dict = service_dict.get('archive_field_cache', None)
-        self.cached_fields = {}
-        if archive_field_cache_dict is not None:
-            self.logger.info("'archive_field_cache' is deprecated, use '[[topics]][[[topic name]]][[[[field name]]]]'")
-            if self.subscriber.cached_fields is not None:
-                self.logger.trace("Ignoring archive_field_cache configration and using topics/fields configuration.")
-
-            fields_dict = archive_field_cache_dict.get('fields', {})
-            for field in archive_field_cache_dict.get('fields', {}):
-                self.cached_fields[field] = {}
-                self.cached_fields[field]['expires_after'] = to_float(fields_dict[field].get('expires_after', None))
-
-        self.logger.info("archive_field_cache_dict is %s" % archive_field_cache_dict)
-
         self.subscriber.start()
 
         if self.binding == 'archive':
             self.bind(weewx.NEW_ARCHIVE_RECORD, self.new_archive_record)
         elif self.binding == 'loop':
             self.bind(weewx.NEW_LOOP_PACKET, self.new_loop_packet)
-            if archive_field_cache_dict is not None or self.subscriber.cached_fields is not None:
+            if self.subscriber.cached_fields is not None:
                 self.cache = RecordCache()
                 self.bind(weewx.NEW_ARCHIVE_RECORD, self.new_archive_record)
         else:
@@ -1486,14 +1461,8 @@ class MQTTSubscribeService(StdService):
                                   % (weeutil.weeutil.timestamp_to_string(event.record['dateTime']),
                                      to_sorted_string(event.record)))
 
-
-        if self.subscriber.cached_fields is not None:
-            cached_fields = self.subscriber.cached_fields
-        else:
-            cached_fields = self.cached_fields
-
         target_data = {}
-        for field in cached_fields:
+        for field in self.subscriber.cached_fields:
             if field in event.record:
                 timestamp = time.time()
                 self.logger.trace("Update cache %s to %s with units of %i and timestamp of %i"
@@ -1505,7 +1474,7 @@ class MQTTSubscribeService(StdService):
             else:
                 target_data[field] = self.cache.get_value(field,
                                                           time.time(),
-                                                          cached_fields[field]['expires_after'])
+                                                          self.subscriber.cached_fields[field]['expires_after'])
                 self.logger.trace("target_data after cache lookup is: %s"
                                   % to_sorted_string(target_data))
 

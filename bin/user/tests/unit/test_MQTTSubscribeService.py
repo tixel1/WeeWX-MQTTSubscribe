@@ -198,19 +198,14 @@ class Testnew_archive_record(unittest.TestCase):
         unit_system = random.randint(1, 10)
         fieldname = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
         config_dict = {}
-        config_dict['MQTTSubscribeService'] = {
-            'archive_field_cache': {
-                'fields': {
-                    fieldname: {}
-                }
-            }
-        }
+        config_dict['MQTTSubscribeService'] = {}
 
         config = configobj.ConfigObj(config_dict)
 
         with mock.patch('user.MQTTSubscribe.MQTTSubscribe') as mock_MQTTSubscribe:
             with mock.patch('user.MQTTSubscribe.RecordCache') as mock_cache:
-                type(mock_MQTTSubscribe.return_value).cached_fields = mock.PropertyMock(return_value=None)
+                type(mock_MQTTSubscribe.return_value).cached_fields = \
+                    mock.PropertyMock(return_value={fieldname:{'expires_after':random.randint(1, 10)}})
                 value = round(random.uniform(10, 100), 2)
                 type(mock_cache.return_value).get_value = mock.Mock(return_value=value)
                 # pylint: disable=no-member
@@ -234,20 +229,14 @@ class Testnew_archive_record(unittest.TestCase):
         unit_system = random.randint(1, 10)
         fieldname = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
         config_dict = {}
-        config_dict['MQTTSubscribeService'] = {
-            'archive_field_cache': {
-                'fields': {
-                    fieldname: {}
-                }
-            }
-        }
+        config_dict['MQTTSubscribeService'] = {}
 
         config = configobj.ConfigObj(config_dict)
 
         with mock.patch('user.MQTTSubscribe.MQTTSubscribe') as mock_MQTTSubscribe:
             with mock.patch('user.MQTTSubscribe.RecordCache'):
                 # pylint: disable=no-member
-                type(mock_MQTTSubscribe.return_value).cached_fields = mock.PropertyMock(return_value=None)
+                type(mock_MQTTSubscribe.return_value).cached_fields = mock.PropertyMock(return_value={fieldname:{}})
                 SUT = MQTTSubscribeService(self.mock_StdEngine, config)
 
                 record = {
