@@ -95,16 +95,6 @@ Configuration:
         # Default is "=".
         keyword_separator = "="
 
-        # List of fields that are cumulative values.
-        # Default is: [] (empty list).
-        # DEPRECATED - use [[topics]]/[[[topic name]]]/[[[[field name]]]]
-        # contains_total =
-
-        # Mapping to WeeWX names.
-        # DEPRECATED - use [[topics]]/[[[topic name]]]/[[[[field name]]]]
-        # [[[label_map]]]
-        #     temp1 = extraTemp1
-
         # Information to map the MQTT data to WeeWX.
         # DEPRECATED - move the fieldname under the [[topics]]/[[[topic name]]]
         # [[[fields]]]
@@ -939,7 +929,6 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
         self.flatten_delimiter = config.get('flatten_delimiter', '_')
         self.keyword_delimiter = config.get('keyword_delimiter', ',')
         self.keyword_separator = config.get('keyword_separator', '=')
-        label_map = config.get('label_map', {})
 
         if self.type not in self.callbacks:
             raise ValueError("Invalid type configured: %s" % self.type)
@@ -953,8 +942,7 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
             if self.fields:
                 self.logger.info("'fields' is deprecated, use '[[topics]][[[topic name]]][[[[field name]]]]'")
                 self._configure_fields()
-
-            self.set_backwards_compatibility(label_map, orig_fields)
+                
             self.logger.debug("MessageCallbackProvider self.fields is %s" % self.fields)
 
     def _configure_fields(self):
@@ -969,16 +957,6 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
                     weewx.units.conversionDict[self.fields[field]['units']]
                 except KeyError:
                     raise ValueError("For %s invalid units, %s" % (field, self.fields[field]['units']))
-
-    def set_backwards_compatibility(self, label_map, orig_fields):
-        """ Any config for backwards compatibility. """
-        # backwards compatible, add the label map
-        # ToDo - fix side affect of setting self.fields
-        for field in label_map:
-            if not field in orig_fields:
-                self.fields[field] = {}
-            if not 'name' in self.fields[field]:
-                self.fields[field]['name'] = label_map[field]
 
     def get_callback(self):
         """ Get the MQTT callback. """
@@ -1171,8 +1149,6 @@ class MQTTSubscribe(object):
             self.logger.info("'topic' is deprecated, use '[[topics]][[[topic name]]]'")
         if 'contains_total' in service_dict['message_callback']:
             self.logger.info("'contains_total' is deprecated use '[[topics]][[[topic name]]][[[[field name]]]]' contains_total setting.")
-        if 'label_map' in service_dict['message_callback']:
-            self.logger.info("'label_map' is deprecated use '[[topics]][[[topic name]]][[[[field name]]]]' name setting.")
 
         message_callback_config = service_dict.get('message_callback', None)
         if message_callback_config is None:
