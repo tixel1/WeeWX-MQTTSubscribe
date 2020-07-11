@@ -29,7 +29,11 @@
 		"    # The topics to subscribe to.",
 		"    [[topics]]",
 		"        unit_system = METRICWX",
-		"        [[[weewx/#]]]"
+		"        [[[weewx/#]]]",
+		"            [[[[weewx/inTemp]]]]",
+		"                name = inTemp",
+		"            [[[[weewx/outTemp]]]]",
+		"                name = outTemp"		
 	],
 	"testruns": [
 		{

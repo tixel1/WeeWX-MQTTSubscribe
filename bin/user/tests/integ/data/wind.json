@@ -28,7 +28,11 @@
     "    # The topics to subscribe to.",
     "    [[topics]]",
     "        unit_system = METRICWX",
-    "        [[[weewx/#]]]"
+    "        [[[weewx/#]]]",
+    "            [[[[weewx/windDir]]]]",
+    "                name = windDir",
+    "            [[[[weewx/windSpeed]]]]",
+    "                name = windSpeed"
   ],
   "testruns": [
     {

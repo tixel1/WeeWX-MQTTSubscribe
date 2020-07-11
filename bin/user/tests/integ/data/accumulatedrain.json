@@ -23,7 +23,13 @@
     "        # Timing issue when running test",
     "        ignore_start_time = True",
     "        adjust_start_time = 1",
-    "        [[[weewx/#]]]"
+    "        [[[weewx/#]]]",
+    "            [[[[rainTotal]]]]",
+    "                name = rain",    
+    "                contains_total = True",
+    "            [[[[weewx/rainTotal]]]]",
+    "                name = rain",
+    "                contains_total = True"
   ],
   "testruns": [
     {
