@@ -51,10 +51,6 @@ Configuration:
     #    Where xxxx is a random number between 1000 and 9999.
     clientid =
 
-    # The topic to subscribe to.
-    # DEPRECATED - use [[topics]]
-    # topic =
-
     # Turn the service on and off.
     # Default is true.
     # Only used by the service.
@@ -1065,9 +1061,6 @@ class MQTTSubscribe(object):
         # pylint: disable=too-many-locals, too-many-statements
         self.logger = logger
         self.logger.debug("service_dict is %s" % service_dict)
-
-        if 'topic' in service_dict:
-            self.logger.info("'topic' is deprecated, use '[[topics]][[[topic name]]]'")
 
         message_callback_config = service_dict.get('message_callback', None)
         if message_callback_config is None:
