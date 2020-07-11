@@ -95,36 +95,6 @@ Configuration:
         # Default is "=".
         keyword_separator = "="
 
-        # Information to map the MQTT data to WeeWX.
-        # DEPRECATED - move the fieldname under the [[topics]]/[[[topic name]]]
-        # [[[fields]]]
-        #     # The incoming field name from MQTT.
-        #     [[[[temp1]]]
-        #        # The WeeWX name.
-        #         # Default is the name from MQTT.
-        #         name = extraTemp1
-        #
-        #         # The conversion type necessary for WeeWX compatibility.
-        #         # Valid values: bool, float, int, none.
-        #         # Default is float.
-        #         conversion_type = float
-        #
-        #         # The units of the incoming data.
-        #         # Useful if this field's units differ from the topic's unit_system's units.
-        #         # Valid values: see, http://www.weewx.com/docs/customizing.htm#units
-        #         # Default is not set.
-        #         # units = km_per_hour
-        #
-        #         # True if the incoming data is cumulative.
-        #         # Valid values: True, False.
-        #         # Default is False.
-        #         contains_total = False
-        #
-        #         # True if the incoming data should not be processed into WeeWX.
-        #         # Valid values: True, False.
-        #         # Default is False.
-        #         ignore = False
-
     [[topics]
         # The QOS level to subscribe to.
         # Default is 0
@@ -537,7 +507,6 @@ class TopicManager(object):
 
         self.topics = {}
         self.subscribed_topics = {}
-        self.managing_fields = False
         self.cached_fields = {}
 
         for topic in config.sections:
@@ -580,14 +549,12 @@ class TopicManager(object):
             self.subscribed_topics[topic]['queue'] = deque()
 
             if topic_dict.sections:
-                self.managing_fields = True
                 if use_topic_as_fieldname:
                     raise ValueError("MQTTSubscribe: use_topic_as_fieldname is mutually exclusive with [[[[fieldname]]]] configuring")
 
             self.subscribed_topics[topic]['fields'] = {}
             self.subscribed_topics[topic]['ignore_msg_id_field'] = []
             if use_topic_as_fieldname:
-                self.managing_fields = True
                 self.subscribed_topics[topic]['fields'][topic] = self._configure_field(topic_dict, topic_dict, topic, topic, defaults)
             else:
                 for field in topic_dict.sections:
@@ -933,30 +900,6 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
         if self.type not in self.callbacks:
             raise ValueError("Invalid type configured: %s" % self.type)
 
-        self.fields = config.get('fields', {})
-        orig_fields = config.get('fields', {})
-        if self.topic_manager.managing_fields and self.fields:
-            self.logger.debug("MessageCallbackProvider ignoring fields configuration and using topics/fields configuration.")
-        else:
-            self.fields_ignore_default = to_bool(self.fields.get('ignore', False))
-            if self.fields:
-                self.logger.info("'fields' is deprecated, use '[[topics]][[[topic name]]][[[[field name]]]]'")
-                self._configure_fields()
-            self.logger.debug("MessageCallbackProvider self.fields is %s" % self.fields)
-
-    def _configure_fields(self):
-        for field in self.fields.sections:
-            self.fields[field]['ignore'] = to_bool((self.fields[field]).get('ignore', self.fields_ignore_default))
-            if  'contains_total' in self.fields[field]:
-                self.fields[field]['contains_total'] = to_bool(self.fields[field]['contains_total'])
-            if 'conversion_type' in self.fields[field]:
-                self.fields[field]['conversion_type'] = self.fields[field]['conversion_type'].lower()
-            if 'units' in self.fields[field]:
-                try:
-                    weewx.units.conversionDict[self.fields[field]['units']]
-                except KeyError:
-                    raise ValueError("For %s invalid units, %s" % (field, self.fields[field]['units']))
-
     def get_callback(self):
         """ Get the MQTT callback. """
         return self.callbacks[self.type]
@@ -998,24 +941,6 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
 
         return dict(_items())
 
-    def _get_fields(self, topic):
-        if self.topic_manager.managing_fields:
-            return self.topic_manager.get_fields(topic)
-
-        return self.fields
-
-    def _get_msg_id_field(self, topic):
-        return self.topic_manager.get_msg_id_field(topic)
-
-    def _get_ignore_msg_id_field(self, topic):
-        return self.topic_manager.get_ignore_msg_id_field(topic)
-
-    def _get_ignore_default(self, topic):
-        if self.topic_manager.managing_fields:
-            return self.topic_manager.get_ignore_value(topic)
-
-        return self.fields_ignore_default
-
     def _log_message(self, msg):
         self.logger.debug("MessageCallbackProvider data-> incoming topic: %s, QOS: %i, retain: %s, payload: %s"
                           %(msg.topic, msg.qos, msg.retain, msg.payload))
@@ -1028,8 +953,8 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
         # Wrap all the processing in a try, so it doesn't crash and burn on any error
         try:
             self._log_message(msg)
-            fields = self._get_fields(msg.topic)
-            fields_ignore_default = self._get_ignore_default(msg.topic)
+            fields = self.topic_manager.get_fields(msg.topic)
+            fields_ignore_default = self.topic_manager.get_ignore_value(msg.topic)
 
             if PY2:
                 payload_str = msg.payload
@@ -1065,14 +990,14 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
             self._log_exception('on_message_keyword', exception, msg)
 
     def _on_message_json(self, client, userdata, msg): # (match callback signature) pylint: disable=unused-argument
-        # pylint: disable=too-many-locals, too-many-branches
+        # pylint: disable=too-many-locals
         # Wrap all the processing in a try, so it doesn't crash and burn on any error
         try:
             self._log_message(msg)
-            fields = self._get_fields(msg.topic)
-            fields_ignore_default = self._get_ignore_default(msg.topic)
-            msg_id_field = self._get_msg_id_field(msg.topic)
-            ignore_msg_id_field = self._get_ignore_msg_id_field(msg.topic)
+            fields = self.topic_manager.get_fields(msg.topic)
+            fields_ignore_default = self.topic_manager.get_ignore_value(msg.topic)
+            msg_id_field = self.topic_manager.get_msg_id_field(msg.topic)
+            ignore_msg_id_field = self.topic_manager.get_ignore_msg_id_field(msg.topic)
 
             if PY2:
                 payload_str = msg.payload
@@ -1110,8 +1035,8 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
         # Wrap all the processing in a try, so it doesn't crash and burn on any error
         try:
             self._log_message(msg)
-            fields = self._get_fields(msg.topic)
-            fields_ignore_default = self._get_ignore_default(msg.topic)
+            fields = self.topic_manager.get_fields(msg.topic)
+            fields_ignore_default = self.topic_manager.get_ignore_value(msg.topic)
 
             payload_str = msg.payload
             if not PY2:
@@ -1143,8 +1068,6 @@ class MQTTSubscribe(object):
 
         if 'topic' in service_dict:
             self.logger.info("'topic' is deprecated, use '[[topics]][[[topic name]]]'")
-        if 'contains_total' in service_dict['message_callback']:
-            self.logger.info("'contains_total' is deprecated use '[[topics]][[[topic name]]][[[[field name]]]]' contains_total setting.")
 
         message_callback_config = service_dict.get('message_callback', None)
         if message_callback_config is None:
@@ -1157,8 +1080,7 @@ class MQTTSubscribe(object):
         self.manager = TopicManager(topics_dict, self.logger)
 
         self.cached_fields = None
-        if self.manager.managing_fields:
-            self.cached_fields = self.manager.cached_fields
+        self.cached_fields = self.manager.cached_fields
 
         clientid = service_dict.get('clientid',
                                     'MQTTSubscribe-' + str(random.randint(1000, 9999)))

@@ -31,59 +31,6 @@ class Msg(object):
         self.qos = qos
         self.retain = retain
 
-class TestFieldsConfiguration(unittest.TestCase):
-    def test_field_in_fields(self):
-        mock_logger = mock.Mock(spec=Logger)
-        mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
-        mock_manager.get_msg_id_field.return_value = None
-        mock_manager.get_ignore_msg_id_field.return_value = []
-
-        message_handler_config_dict = {}
-        message_handler_config_dict['type'] = 'individual'
-
-        input_name = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])  # pylint: disable=unused-variable
-        output_name = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])  # pylint: disable=unused-variable
-
-        fields = {}
-        field = {}
-        field['name'] = output_name
-        field['contains_total'] = False
-        fields[input_name] = field
-        message_handler_config_dict['fields'] = fields
-
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
-
-        self.assertIn(input_name, SUT.fields)
-        self.assertIn('name', SUT.fields[input_name])
-        self.assertEqual(SUT.fields[input_name]['name'], output_name)
-        self.assertFalse(SUT.fields[input_name]['contains_total'])
-
-    def test_type_is_lowercase(self):
-        mock_logger = mock.Mock(spec=Logger)
-        mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
-        mock_manager.get_msg_id_field.return_value = None
-        mock_manager.get_ignore_msg_id_field.return_value = []
-
-        message_handler_config_dict = {}
-        message_handler_config_dict['type'] = 'individual'
-
-        input_name = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])  # pylint: disable=unused-variable
-        conversion_type = 'INT'
-
-        fields = {}
-        field = {}
-        field['conversion_type'] = conversion_type
-        fields[input_name] = field
-        message_handler_config_dict['fields'] = fields
-
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
-
-        self.assertIn(input_name, SUT.fields)
-        self.assertIn('conversion_type', SUT.fields[input_name])
-        self.assertEqual(SUT.fields[input_name]['conversion_type'], conversion_type.lower())
-
 class TestGetDefaultCallBacks(unittest.TestCase):
     def test_get_unknown_payload_type(self):
         mock_logger = mock.Mock(spec=Logger)
@@ -99,7 +46,6 @@ class TestGetDefaultCallBacks(unittest.TestCase):
     def test_get_individual_payload_type(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -114,7 +60,6 @@ class TestGetDefaultCallBacks(unittest.TestCase):
     def test_get_json_payload_type(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -129,7 +74,6 @@ class TestGetDefaultCallBacks(unittest.TestCase):
     def test_get_keyword_payload_type(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -145,7 +89,6 @@ class TestConversionType(unittest.TestCase):
     def test_bool_conversion(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -172,7 +115,6 @@ class TestConversionType(unittest.TestCase):
     def test_float_conversion(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -200,7 +142,6 @@ class TestConversionType(unittest.TestCase):
     def test_int_conversion(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -228,7 +169,6 @@ class TestConversionType(unittest.TestCase):
     def test_default_conversion(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -254,7 +194,6 @@ class TestConversionType(unittest.TestCase):
     def test_no_conversion(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -292,7 +231,6 @@ class TestKeywordload(unittest.TestCase):
     def test_payload_empty(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -309,9 +247,10 @@ class TestKeywordload(unittest.TestCase):
     def test_payload_bad_data(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -323,9 +262,10 @@ class TestKeywordload(unittest.TestCase):
     def test_payload_missing_delimiter(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -337,9 +277,10 @@ class TestKeywordload(unittest.TestCase):
     def test_payload_missing_separator(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -354,9 +295,10 @@ class TestKeywordload(unittest.TestCase):
     def test_payload_missing_dateTime(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -380,9 +322,10 @@ class TestKeywordload(unittest.TestCase):
     def test_payload_missing_units(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -405,9 +348,10 @@ class TestKeywordload(unittest.TestCase):
     def test_payload_good(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -431,7 +375,6 @@ class TestKeywordload(unittest.TestCase):
     def test_ignore_default_true(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -466,9 +409,10 @@ class TestKeywordload(unittest.TestCase):
     def test_ignore_default_true_ignore_field_false(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         message_handler_config_dict = {}
         message_handler_config_dict['type'] = 'keyword'
@@ -509,9 +453,10 @@ class TestKeywordload(unittest.TestCase):
     def test_ignore_field_true(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         message_handler_config_dict = {}
         message_handler_config_dict['type'] = 'keyword'
@@ -558,7 +503,6 @@ class TestJsonPayload(unittest.TestCase):
     def test_invalid_json(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -575,7 +519,6 @@ class TestJsonPayload(unittest.TestCase):
     def test_empty_payload(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -589,9 +532,10 @@ class TestJsonPayload(unittest.TestCase):
     def test_missing_dateTime(self):
         mock_manager = mock.Mock(spec=TopicManager)
         stub_logger = test_weewx_stubs.Logger(console=True)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
 
@@ -612,9 +556,10 @@ class TestJsonPayload(unittest.TestCase):
     def test_missing_units(self):
         mock_manager = mock.Mock(spec=TopicManager)
         stub_logger = test_weewx_stubs.Logger(console=True)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
 
@@ -635,10 +580,11 @@ class TestJsonPayload(unittest.TestCase):
     def test_payload_good(self):
         mock_manager = mock.Mock(spec=TopicManager)
         stub_logger = test_weewx_stubs.Logger(console=True)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_value.return_value = True
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
 
@@ -664,7 +610,6 @@ class TestJsonPayload(unittest.TestCase):
     def test_msg_id_set(self):
         mock_manager = mock.Mock(spec=TopicManager)
         stub_logger = test_weewx_stubs.Logger(console=True)
-        mock_manager.managing_fields = True
         msg_id_field = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])  # pylint: disable=unused-variable
         mock_manager.get_msg_id_field.return_value = msg_id_field
         mock_manager.get_fields.return_value = {}
@@ -703,7 +648,6 @@ class TestJsonPayload(unittest.TestCase):
     def test_ignore_msg_id_field_set(self):
         mock_manager = mock.Mock(spec=TopicManager)
         stub_logger = test_weewx_stubs.Logger(console=True)
-        mock_manager.managing_fields = True
         msg_id_field = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])  # pylint: disable=unused-variable
         mock_manager.get_msg_id_field.return_value = msg_id_field
         mock_manager.get_fields.return_value = {}
@@ -743,9 +687,10 @@ class TestJsonPayload(unittest.TestCase):
     def test_payload_nested(self):
         mock_manager = mock.Mock(spec=TopicManager)
         stub_logger = test_weewx_stubs.Logger(console=True)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
 
@@ -780,9 +725,10 @@ class TestJsonPayload(unittest.TestCase):
     def test_payload_nested_rename(self):
         mock_manager = mock.Mock(spec=TopicManager)
         stub_logger = test_weewx_stubs.Logger(console=True)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {'nested01_inTemp': {'name': 'inTemp'}}
 
         message_handler_config_dict = copy.deepcopy(self.message_handler_config_dict)
         message_handler_config_dict['fields'] = {}
@@ -822,7 +768,6 @@ class TestJsonPayload(unittest.TestCase):
     def test_ignore_default_true(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -854,9 +799,10 @@ class TestJsonPayload(unittest.TestCase):
     def test_ignore_default_true_ignore_field_false(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         message_handler_config_dict = {}
         message_handler_config_dict['type'] = 'json'
@@ -898,9 +844,10 @@ class TestJsonPayload(unittest.TestCase):
     def test_ignore_field_true(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         message_handler_config_dict = {}
         message_handler_config_dict['type'] = 'json'
@@ -953,9 +900,10 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
     def test_bad_payload(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -970,9 +918,10 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
     def test_empty_payload(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -984,9 +933,10 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
     def test_None_payload(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -1000,9 +950,10 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
     def test_unicode_topic(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         if PY2:
             topic = unicode(self.topic)  # (never called under python 3) pylint: disable=undefined-variable
@@ -1030,9 +981,10 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
     def test_single_topic(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -1050,9 +1002,10 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
     def test_multiple_topics(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -1073,9 +1026,10 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
     def test_two_topics(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -1096,7 +1050,6 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
     def test_ignore_default_true(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -1124,9 +1077,10 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
     def test_ignore_default_true_ignore_field_false(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         message_handler_config_dict = {}
         message_handler_config_dict['type'] = 'individual'
@@ -1156,7 +1110,6 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
     def test_ignore_field_true(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
@@ -1201,9 +1154,10 @@ class TestIndividualPayloadFullTopicFieldName(unittest.TestCase):
     def test_bad_payload(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -1218,9 +1172,10 @@ class TestIndividualPayloadFullTopicFieldName(unittest.TestCase):
     def test_empty_payload(self):
         mock_logger = mock.Mock(spec=Logger)
         mock_manager = mock.Mock(spec=TopicManager)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -1232,9 +1187,10 @@ class TestIndividualPayloadFullTopicFieldName(unittest.TestCase):
     def test_None_payload(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         message_handler_config_dict = dict(self.message_handler_config_dict)
 
@@ -1248,9 +1204,10 @@ class TestIndividualPayloadFullTopicFieldName(unittest.TestCase):
     def test_single_topic(self):
         mock_manager = mock.Mock(spec=TopicManager)
         mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = False
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
+        mock_manager.get_ignore_value.return_value = False
+        mock_manager.get_fields.return_value = {}
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
@@ -1266,9 +1223,9 @@ class TestIndividualPayloadFullTopicFieldName(unittest.TestCase):
         mock_manager.append_data.assert_called_once_with(msg.topic, {self.topic_end: payload}, self.topic_end)
 
 if __name__ == '__main__':
-    test_suite = unittest.TestSuite()
-    test_suite.addTest(TestJsonPayload('test_msg_id_set'))
+    # test_suite = unittest.TestSuite()
+    # test_suite.addTest(TestJsonPayload('test_msg_id_set'))
     # test_suite.addTest(TestJsonPayload('test_ignore_msg_id_field_set'))
-    unittest.TextTestRunner().run(test_suite)
+    # unittest.TextTestRunner().run(test_suite)
 
-    #unittest.main(exit=False)
+    unittest.main(exit=False)
