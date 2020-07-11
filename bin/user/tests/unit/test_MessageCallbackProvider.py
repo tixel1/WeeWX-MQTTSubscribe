@@ -995,7 +995,7 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
 
         SUT._on_message_individual(None, None, msg)
 
-        mock_manager.append_data.assert_called_once_with(msg.topic, {self.topic_end: None}, self.topic_end)
+        mock_manager.append_data.assert_called_once_with(msg.topic, {msg.topic: None}, msg.topic)
 
     def test_unicode_topic(self):
         mock_manager = mock.Mock(spec=TopicManager)
@@ -1020,7 +1020,7 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
         msg = Msg(topic, payload_str, 0, 0)
 
         SUT._on_message_individual(None, None, msg)
-        mock_manager.append_data.assert_called_once_with(msg.topic, {self.topic_end: payload}, self.topic_end)
+        mock_manager.append_data.assert_called_once_with(msg.topic, {msg.topic: payload}, msg.topic)
 
         call_args_list = mock_manager.append_data.call_args_list
         second_arg = call_args_list[0].args[1]
@@ -1068,7 +1068,7 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
                   0)
 
         SUT._on_message_individual(None, None, msg)
-        mock_manager.append_data.assert_called_once_with(msg.topic, {self.topic_end: payload}, self.topic_end)
+        mock_manager.append_data.assert_called_once_with(msg.topic, {msg.topic: payload}, msg.topic)
 
     def test_two_topics(self):
         mock_manager = mock.Mock(spec=TopicManager)
@@ -1091,7 +1091,7 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
                   0)
 
         SUT._on_message_individual(None, None, msg)
-        mock_manager.append_data.assert_called_once_with(msg.topic, {self.topic_end: payload}, self.topic_end)
+        mock_manager.append_data.assert_called_once_with(msg.topic, {msg.topic: payload}, msg.topic)
 
     def test_ignore_default_true(self):
         mock_manager = mock.Mock(spec=TopicManager)
@@ -1237,14 +1237,13 @@ class TestIndividualPayloadFullTopicFieldName(unittest.TestCase):
         mock_manager.get_ignore_msg_id_field.return_value = []
 
         message_handler_config_dict = dict(self.message_handler_config_dict)
-        message_handler_config_dict['full_topic_fieldname'] = True
 
         SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         msg = Msg(self.topic, None, 0, 0)
 
         SUT._on_message_individual(None, None, msg)
-        mock_manager.append_data.assert_called_once_with(msg.topic, {self.topic_end: None}, self.topic_end)
+        mock_manager.append_data.assert_called_once_with(msg.topic, {msg.topic: None}, msg.topic)
 
     def test_single_topic(self):
         mock_manager = mock.Mock(spec=TopicManager)
@@ -1266,59 +1265,10 @@ class TestIndividualPayloadFullTopicFieldName(unittest.TestCase):
         SUT._on_message_individual(None, None, msg)
         mock_manager.append_data.assert_called_once_with(msg.topic, {self.topic_end: payload}, self.topic_end)
 
-    def test_multiple_topics(self):
-        mock_manager = mock.Mock(spec=TopicManager)
-        mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = True
-        mock_manager.get_msg_id_field.return_value = None
-        mock_manager.get_ignore_msg_id_field.return_value = []
-        mock_manager.get_ignore_value.return_value = None
-        mock_manager.get_fields.return_value = {'use_topic_as_fieldname': True}
-
-        message_handler_config_dict = dict(self.message_handler_config_dict)
-        message_handler_config_dict['full_topic_fieldname'] = True
-
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
-
-        payload = round(random.uniform(1, 100), 2)
-        if PY2:
-            payload_str = str(payload)
-        else:
-            payload_str = str(payload).encode('UTF-8')
-
-        msg = Msg(self.multi_topic, payload_str, 0, 0)
-
-        SUT._on_message_individual(None, None, msg)
-        mock_manager.append_data.assert_called_once_with(msg.topic, {msg.topic: payload}, msg.topic)
-
-    def test_two_topics(self):
-        mock_manager = mock.Mock(spec=TopicManager)
-        mock_logger = mock.Mock(spec=Logger)
-        mock_manager.managing_fields = True
-        mock_manager.get_msg_id_field.return_value = None
-        mock_manager.get_ignore_msg_id_field.return_value = []
-        mock_manager.get_ignore_value.return_value = None
-        mock_manager.get_fields.return_value = {'use_topic_as_fieldname': True}
-
-        message_handler_config_dict = dict(self.message_handler_config_dict)
-        message_handler_config_dict['full_topic_fieldname'] = True
-
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
-
-        payload = round(random.uniform(1, 100), 2)
-        if PY2:
-            payload_str = str(payload)
-        else:
-            payload_str = str(payload).encode('UTF-8')
-
-        msg = Msg(self.topic, payload_str, 0, 0)
-
-        SUT._on_message_individual(None, None, msg)
-        mock_manager.append_data.assert_called_once_with(msg.topic, {msg.topic: payload}, msg.topic)
-
 if __name__ == '__main__':
     test_suite = unittest.TestSuite()
-    test_suite.addTest(TestKeywordload('test_payload_no_previous_value'))
+    test_suite.addTest(TestJsonPayload('test_msg_id_set'))
+    # test_suite.addTest(TestJsonPayload('test_ignore_msg_id_field_set'))
     unittest.TextTestRunner().run(test_suite)
 
     #unittest.main(exit=False)

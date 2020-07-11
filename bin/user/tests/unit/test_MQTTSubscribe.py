@@ -29,7 +29,6 @@ class TestInitialization(unittest.TestCase):
         keepalive = random.randint(1, 10)
         config_dict = {
             'console': False,
-            'full_topic_fieldname': False,
             'keyword_delimiter': None,
             'keyword_separator': None,
             'host': host,
@@ -63,7 +62,6 @@ class TestInitialization(unittest.TestCase):
         keepalive = random.randint(1, 10)
         config_dict = {
             'console': False,
-            'full_topic_fieldname': False,
             'keyword_delimiter': None,
             'keyword_separator': None,
             'host': host,
@@ -97,7 +95,6 @@ class TestInitialization(unittest.TestCase):
         keepalive = random.randint(1, 10)
         config_dict = {
             'console': False,
-            'full_topic_fieldname': False,
             'keyword_delimiter': None,
             'keyword_separator': None,
             'host': host,
@@ -133,7 +130,6 @@ class TestInitialization(unittest.TestCase):
         password = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
         config_dict = {
             'console': False,
-            'full_topic_fieldname': False,
             'keyword_delimiter': None,
             'keyword_separator': None,
             'host': host,
@@ -166,7 +162,6 @@ class Teston_connect(unittest.TestCase):
     unit_system = test_weewx_stubs.UNITS_CONSTANTS[unit_system_name]
     config_dict = {
         'console': False,
-        'full_topic_fieldname': False,
         'keyword_delimiter': None,
         'keyword_separator': None,
         'host': 'host',

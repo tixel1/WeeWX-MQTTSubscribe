@@ -260,7 +260,7 @@ import weewx
 import weewx.drivers
 from weewx.engine import StdService
 import weeutil
-from weeutil.weeutil import option_as_list, to_bool, to_float, to_int, to_sorted_string
+from weeutil.weeutil import to_bool, to_float, to_int, to_sorted_string
 
 VERSION = '1.6.1-rc01'
 DRIVER_NAME = 'MQTTSubscribeDriver'
@@ -942,7 +942,6 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
             if self.fields:
                 self.logger.info("'fields' is deprecated, use '[[topics]][[[topic name]]][[[[field name]]]]'")
                 self._configure_fields()
-                
             self.logger.debug("MessageCallbackProvider self.fields is %s" % self.fields)
 
     def _configure_fields(self):
@@ -1066,7 +1065,7 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
             self._log_exception('on_message_keyword', exception, msg)
 
     def _on_message_json(self, client, userdata, msg): # (match callback signature) pylint: disable=unused-argument
-        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-locals, too-many-branches
         # Wrap all the processing in a try, so it doesn't crash and burn on any error
         try:
             self._log_message(msg)
@@ -1119,10 +1118,7 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
                 if msg.payload is not None:
                     payload_str = msg.payload.decode('utf-8')
 
-            if self.topic_manager.managing_fields:
-                key = msg.topic
-            else:
-                key = msg.topic.rpartition('/')[2]
+            key = msg.topic
 
             if PY2:
                 key = key.encode('utf-8')
