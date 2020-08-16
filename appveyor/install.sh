@@ -22,6 +22,14 @@
     pip install coverage --quiet --no-python-version-warning
 
     echo "Running weewx install"
-    wget  $WEEWX_URL/weewx-$WEEWX.tar.gz
-    mkdir weewx
-    tar xfz weewx-$WEEWX.tar.gz --strip-components=1 -C weewx    
+    if [ "$WEEWX" = "master" ]; then
+      git clone https://github.com/weewx/weewx.git weewx
+      cd weewx
+      git show --oneline -s | tee master.txt
+      detail=`cat master.txt`
+      appveyor AddMessage "Testing against master " -Category Information -Details "$detail"
+    else
+      wget  $WEEWX_URL/weewx-$WEEWX.tar.gz
+      mkdir weewx
+      tar xfz weewx-$WEEWX.tar.gz --strip-components=1 -C weewx
+    fi

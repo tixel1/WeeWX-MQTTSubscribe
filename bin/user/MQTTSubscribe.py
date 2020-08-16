@@ -72,6 +72,34 @@ Configuration:
     # Only used by the driver.
     archive_topic = None
 
+    # The TLS options that are passed to tls_set method of the MQTT client.
+    # For additional information see, https://eclipse.org/paho/clients/python/docs/strptime-format-codes
+    [[tls]]
+        # Path to the Certificate Authority certificate files that are to be treated as trusted by this client.
+        ca_certs =
+
+        # The PEM encoded client certificate and private keys.
+        # Default is None
+        certfile = None
+
+        # The private keys.
+        # Default is None
+        keyfile = None
+
+        # The certificate requirements that the client imposes on the broker.
+        # Valid values: none, optional, required
+        # Default is required,
+        certs_required = required
+
+        # The version of the SSL/TLS protocol to be used.
+        # Valid values: sslv2, sslv23, sslv3, tls, tlsv1, tlsv11, tlsv12.
+        # Default is tlsv12.
+        tls_version = tlsv12
+
+        # The encryption ciphers that are allowable for this connection. Specify None to use the defaults
+        # Default is None.
+        ciphers = None
+
     # Configuration for the message callback.
     [[message_callback]]
         # The format of the MQTT payload.
@@ -215,6 +243,7 @@ import logging
 import platform
 import random
 import re
+import ssl
 import sys
 import time
 from collections import deque
@@ -228,7 +257,7 @@ from weewx.engine import StdService
 import weeutil
 from weeutil.weeutil import to_bool, to_float, to_int, to_sorted_string
 
-VERSION = '1.6.1-rc01'
+VERSION = '1.6.2-rc01'
 DRIVER_NAME = 'MQTTSubscribeDriver'
 DRIVER_VERSION = VERSION
 
@@ -1058,7 +1087,7 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
 class MQTTSubscribe(object):
     """ Manage MQTT sunscriptions. """
     def __init__(self, service_dict, logger):
-        # pylint: disable=too-many-locals, too-many-statements
+        # pylint: disable=too-many-locals, too-many-statements, too-many-branches
         self.logger = logger
         self.logger.debug("service_dict is %s" % service_dict)
 
@@ -1136,12 +1165,78 @@ class MQTTSubscribe(object):
         if username is not None and password is not None:
             self.client.username_pw_set(username, password)
 
-        self.client.connect(host, port, keepalive)
+        tls_dict = service_dict.get('tls')
+        if tls_dict:
+            self.config_tls(tls_dict)
+
+        try:
+            self.client.connect(host, port, keepalive)
+        except Exception as exception: # (want to catch all) pylint: disable=broad-except
+            self.logger.error("Failed to connect to %s at %i. '%s'" %(host, port, exception))
+            raise weewx.WeeWxIOError(exception)
 
     @property
     def subscribed_topics(self):
         """ The topics subscribed to. """
         return self.manager.subscribed_topics
+
+    def config_tls(self, tls_dict):
+        """ Configure TLS."""
+        valid_cert_reqs = {
+            'none': ssl.CERT_NONE,
+            'optional': ssl.CERT_OPTIONAL,
+            'required': ssl.CERT_REQUIRED
+        }
+
+        # Some versions are dependent on the OpenSSL install
+        valid_tls_versions = {}
+        try:
+            valid_tls_versions['tls'] = ssl.PROTOCOL_TLS
+        except AttributeError:
+            pass
+        try:
+            valid_tls_versions['tlsv1'] = ssl.PROTOCOL_TLSv1
+        except AttributeError:
+            pass
+        try:
+            valid_tls_versions['tlsv11'] = ssl.PROTOCOL_TLSv1_1
+        except AttributeError:
+            pass
+        try:
+            valid_tls_versions['tlsv12'] = ssl.PROTOCOL_TLSv1_2
+        except AttributeError:
+            pass
+        try:
+            valid_tls_versions['sslv2'] = ssl.PROTOCOL_SSLv2
+        except AttributeError:
+            pass
+        try:
+            valid_tls_versions['sslv23'] = ssl.PROTOCOL_SSLv23
+        except AttributeError:
+            pass
+        try:
+            valid_tls_versions['sslv3'] = ssl.PROTOCOL_SSLv3
+        except AttributeError:
+            pass
+
+        ca_certs = tls_dict.get('ca_certs')
+        if ca_certs is None:
+            raise ValueError("'ca_certs' is required.")
+
+        valid_cert_reqs = valid_cert_reqs.get(tls_dict.get('certs_required', 'required'))
+        if valid_cert_reqs is None:
+            raise ValueError("Invalid 'certs_required'., %s" % tls_dict['certs_required'])
+
+        tls_version = valid_tls_versions.get(tls_dict.get('tls_version', 'tlsv12'))
+        if tls_version is None:
+            raise ValueError("Invalid 'tls_version'., %s" % tls_dict['tls_version'])
+
+        self.client.tls_set(ca_certs=ca_certs,
+                            certfile=tls_dict.get('certfile'),
+                            keyfile=tls_dict.get('keyfile'),
+                            cert_reqs=valid_cert_reqs,
+                            tls_version=tls_version,
+                            ciphers=tls_dict.get('ciphers'))
 
     def get_data(self, topic, end_ts=MAXSIZE):
         """ Get data off the queue of MQTT data. """
