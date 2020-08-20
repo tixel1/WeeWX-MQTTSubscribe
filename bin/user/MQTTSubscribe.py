@@ -1095,6 +1095,24 @@ class MQTTSubscribe(object):
         if message_callback_config is None:
             raise ValueError("[[message_callback]] is required.")
 
+        if 'topic' in service_dict:
+            raise ValueError("'topic' is deprecated, use '[[topics]][[[topic name]]]'")
+        if 'overlap' in service_dict:
+            raise ValueError("'overlap' is deprecated, use 'adjust_start_time'")
+        if 'archive_field_cache' in service_dict:
+            raise ValueError("'archive_field_cache' is deprecated, use '[[topics]][[[topic name]]][[[[field name]]]]'")
+        if 'full_topic_fieldname' in service_dict['message_callback']:
+            raise ValueError("'full_topic_fieldname' is deprecated, use '[[topics]][[[topic name]]][[[[field name]]]]'")
+        if 'contains_total' in service_dict['message_callback']:
+            raise ValueError("'contains_total' is deprecated use '[[topics]][[[topic name]]][[[[field name]]]]' contains_total setting.")
+        if 'label_map' in service_dict['message_callback']:
+            raise ValueError("'label_map' is deprecated use '[[topics]][[[topic name]]][[[[field name]]]]' name setting.")
+        if 'fields' in service_dict['message_callback']:
+            raise ValueError("'fields' is deprecated, use '[[topics]][[[topic name]]][[[[field name]]]]'")
+
+        # For backwards compatibility
+        overlap = to_float(service_dict.get('overlap', 0))
+        self.logger.info("overlap is %s" % overlap)
         topics_dict = service_dict.get('topics', {})
 
         message_callback_provider_name = service_dict.get('message_callback_provider',
