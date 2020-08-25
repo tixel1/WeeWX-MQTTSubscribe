@@ -1072,14 +1072,14 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
             fields_ignore_default = self.topic_manager.get_ignore_value(msg.topic)
 
             payload_str = msg.payload
-            if not PY2:
-                if msg.payload is not None:
-                    payload_str = msg.payload.decode('utf-8')
 
             key = msg.topic
 
             if PY2:
                 key = key.encode('utf-8')
+            else:
+                if msg.payload is not None:
+                    payload_str = msg.payload.decode('utf-8')
 
             unit_system = self.topic_manager.get_unit_system(msg.topic)
             if not fields.get(key, {}).get('ignore', fields_ignore_default):
@@ -1204,7 +1204,7 @@ class MQTTSubscribe(object):
     @property
     def subscribed_topics(self):
         """ The topics subscribed to. """
-        return self.manager.subscribed_topics
+        return self.manager.subscribed_topics # pragma: no cover
 
     def config_tls(self, tls_dict):
         """ Configure TLS."""
@@ -1266,11 +1266,11 @@ class MQTTSubscribe(object):
 
     def get_data(self, topic, end_ts=MAXSIZE):
         """ Get data off the queue of MQTT data. """
-        return self.manager.get_data(topic, end_ts)
+        return self.manager.get_data(topic, end_ts) # pragma: no cover
 
     def get_accumulated_data(self, topic, start_ts, end_ts, units):
         """ Get the MQTT data after being accumulated. """
-        return self.manager.get_accumulated_data(topic, start_ts, end_ts, units)
+        return self.manager.get_accumulated_data(topic, start_ts, end_ts, units) # pragma: no cover
 
     def start(self):
         """ start subscribing to the topics """
@@ -1434,11 +1434,11 @@ class MQTTSubscribeService(StdService):
 
 def loader(config_dict, engine): # (Need to match function signature) pylint: disable=unused-argument
     """ Load and return the driver. """
-    return MQTTSubscribeDriver(**config_dict[DRIVER_NAME])
+    return MQTTSubscribeDriver(**config_dict[DRIVER_NAME]) # pragma: no cover
 
 def confeditor_loader():
     """ Load and return the configuration editor. """
-    return MQTTSubscribeDriverConfEditor()
+    return MQTTSubscribeDriverConfEditor() # pragma: no cover
 
 class MQTTSubscribeDriver(weewx.drivers.AbstractDevice): # (methods not used) pylint: disable=abstract-method
     """weewx driver that reads data from MQTT"""
@@ -1463,7 +1463,7 @@ class MQTTSubscribeDriver(weewx.drivers.AbstractDevice): # (methods not used) py
     @property
     def hardware_name(self):
         """ The name of the hardware driver. """
-        return "MQTTSubscribeDriver"
+        return "MQTTSubscribeDriver" # pragma: no cover
 
     @property
     def archive_interval(self):
