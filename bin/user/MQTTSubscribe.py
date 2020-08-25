@@ -1118,9 +1118,6 @@ class MQTTSubscribe(object):
         if 'fields' in service_dict['message_callback']:
             raise ValueError("'fields' is deprecated, use '[[topics]][[[topic name]]][[[[field name]]]]'")
 
-        # For backwards compatibility
-        overlap = to_float(service_dict.get('overlap', 0))
-        self.logger.info("overlap is %s" % overlap)
         topics_dict = service_dict.get('topics', {})
 
         message_callback_provider_name = service_dict.get('message_callback_provider',
