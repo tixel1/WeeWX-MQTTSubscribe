@@ -1275,7 +1275,8 @@ class MQTTSubscribe(object):
             time.sleep(1)
 
         if self.userdata['connect_rc'] > 0:
-            raise weewx.WeeWxIOError("Unable to connect. Return code is %i flags are %s." % (self.userdata['rc'], self.userdata['flags']))
+            raise weewx.WeeWxIOError("Unable to connect. Return code is %i flags are %s."
+                                     % (self.userdata['connect_rc'], self.userdata['flags']))
 
     def disconnect(self):
         """ shut it down """
