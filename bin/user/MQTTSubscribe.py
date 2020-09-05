@@ -281,6 +281,7 @@ class AbstractLogger(object):
         if logging.getLevelName(self.trace_level) == 'Level 5':
             logging.addLevelName(self.trace_level, "TRACE")
 
+        # check that the level configured is valid
         self.level = logging._checkLevel(level) # not sure there is a better way pylint: disable=protected-access
 
     def log_environment(self):
@@ -312,7 +313,7 @@ class AbstractLogger(object):
         """ Log error messages. """
         raise NotImplementedError("Method 'error' not implemented")
 
-try: # pragma: no cover
+try:
     import weeutil.logger
     def setup_logging(logging_level, config_dict):
         """ Setup logging for running in standalone mode."""
@@ -326,7 +327,7 @@ try: # pragma: no cover
         MSG_FORMAT = "(%s) %s"
 
         def __init__(self, mode, level='NOTSET', filename=None, console=None):
-            super(Logger, self).__init__(mode, level, filename=None, console=None)
+            super(Logger, self).__init__(mode, level, filename=filename, console=console)
             self._logmsg = logging.getLogger(__name__)
             if self.console:
                 self._logmsg.addHandler(logging.StreamHandler(sys.stdout))
@@ -381,7 +382,7 @@ try: # pragma: no cover
         def error(self, msg):
             """ Log error messages. """
             self._logmsg.error(self.MSG_FORMAT, self.mode, msg)
-except ImportError: # pragma: no cover
+except ImportError:
     import syslog
     def setup_logging(logging_level, config_dict): # Need to match signature pylint: disable=unused-argument
         """ Setup logging for running in standalone mode."""
@@ -394,7 +395,7 @@ except ImportError: # pragma: no cover
     class Logger(AbstractLogger):
         """ The logging class. """
         def __init__(self, mode, level='NOTSET', filename=None, console=None):
-            super(Logger, self).__init__(mode, level, filename=None, console=None)
+            super(Logger, self).__init__(mode, level, filename=filename, console=console)
 
             self.file = None
             if self.filename is not None:
@@ -1089,7 +1090,7 @@ class MessageCallbackProvider(AbstractMessageCallbackProvider):
         except Exception as exception: # (want to catch all) pylint: disable=broad-except
             self._log_exception('on_message_individual', exception, msg)
 
-class MQTTSubscribe(object):
+class MQTTSubscriber(object):
     """ Manage MQTT sunscriptions. """
     def __init__(self, service_dict, logger):
         # pylint: disable=too-many-locals, too-many-statements, too-many-branches
@@ -1341,7 +1342,7 @@ class MQTTSubscribeService(StdService):
 
         self.end_ts = 0 # prime for processing loop packet
 
-        self.subscriber = MQTTSubscribe(service_dict, self.logger)
+        self.subscriber = MQTTSubscriber(service_dict, self.logger)
 
         self.logger.info("binding is %s" % self.binding)
 
@@ -1450,7 +1451,7 @@ class MQTTSubscribeDriver(weewx.drivers.AbstractDevice): # (methods not used) py
         self._archive_interval = to_int(stn_dict.get('archive_interval', 300))
         self.archive_topic = stn_dict.get('archive_topic', None)
 
-        self.subscriber = MQTTSubscribe(stn_dict, self.logger)
+        self.subscriber = MQTTSubscriber(stn_dict, self.logger)
 
         self.logger.info("Wait before retry is %i" % self.wait_before_retry)
         self.subscriber.start()

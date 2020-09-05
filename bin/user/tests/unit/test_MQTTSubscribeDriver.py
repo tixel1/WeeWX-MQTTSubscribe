@@ -20,7 +20,7 @@ class TestclosePort(unittest.TestCase):
         config_dict = {}
         config_dict['topic'] = 'foo/bar'
 
-        with mock.patch('user.MQTTSubscribe.MQTTSubscribe'):
+        with mock.patch('user.MQTTSubscribe.MQTTSubscriber'):
             SUT = MQTTSubscribeDriver(**config_dict)
             SUT.closePort()
             SUT.subscriber.disconnect.assert_called_once() # pylint: disable=no-member
@@ -30,7 +30,7 @@ class TestArchiveInterval(unittest.TestCase):
         config_dict = {}
         config_dict['topic'] = 'foo/bar'
 
-        with mock.patch('user.MQTTSubscribe.MQTTSubscribe'):
+        with mock.patch('user.MQTTSubscribe.MQTTSubscriber'):
             with self.assertRaises(NotImplementedError) as error:
                 SUT = MQTTSubscribeDriver(**config_dict)
                 SUT.archive_interval # pylint: disable=pointless-statement
@@ -45,7 +45,7 @@ class TestArchiveInterval(unittest.TestCase):
         config_dict['archive_topic'] = topic
         config_dict['archive_interval'] = 900
 
-        with mock.patch('user.MQTTSubscribe.MQTTSubscribe'):
+        with mock.patch('user.MQTTSubscribe.MQTTSubscriber'):
             SUT = MQTTSubscribeDriver(**config_dict)
             archive_interval = SUT.archive_interval
             self.assertEqual(archive_interval, default_archive_interval)
@@ -77,11 +77,32 @@ class TestgenLoopPackets(unittest.TestCase):
         for data in test_data:
             yield data
 
+    @staticmethod
+    def empty_generator():
+        return
+        yield # needed to make this a generator # pylint: disable=unreachable
+
     def test_queue_empty(self):
         topic = 'foo/bar'
         self.setup_queue_tests(topic)
 
-        with mock.patch('user.MQTTSubscribe.MQTTSubscribe') as mock_manager:
+        with mock.patch('user.MQTTSubscribe.MQTTSubscriber') as mock_manager:
+            with mock.patch('user.MQTTSubscribe.time') as mock_time:
+                type(mock_manager.return_value).subscribed_topics = mock.PropertyMock(return_value=[topic])
+                type(mock_manager.return_value).get_data = mock.Mock(side_effect=[self.empty_generator(), self.generator([self.queue_data])])
+
+                SUT = MQTTSubscribeDriver(**self.config_dict)
+                gen = SUT.genLoopPackets()
+                next(gen, None)
+
+                mock_time.sleep.assert_called_once()
+                self.assertEqual(mock_manager.return_value.get_data.call_count, 2)
+
+    def test_queue_returns_none(self):
+        topic = 'foo/bar'
+        self.setup_queue_tests(topic)
+
+        with mock.patch('user.MQTTSubscribe.MQTTSubscriber') as mock_manager:
             with mock.patch('user.MQTTSubscribe.time') as mock_time:
                 type(mock_manager.return_value).subscribed_topics = mock.PropertyMock(return_value=[topic])
                 type(mock_manager.return_value).get_data = mock.Mock(return_value=self.generator([None, self.queue_data]))
@@ -107,7 +128,7 @@ class TestgenLoopPackets(unittest.TestCase):
 
         packet = None
 
-        with mock.patch('user.MQTTSubscribe.MQTTSubscribe') as mock_manager:
+        with mock.patch('user.MQTTSubscribe.MQTTSubscriber') as mock_manager:
             with mock.patch('user.MQTTSubscribe.time') as mock_time:
                 type(mock_manager.return_value).subscribed_topics = mock.PropertyMock(return_value=[topic])
                 mock_time.sleep.side_effect = mock.Mock(side_effect=SystemExit()) # Hack one, use this to escape the infinit loop
@@ -124,7 +145,7 @@ class TestgenLoopPackets(unittest.TestCase):
         topic = 'foo/bar'
         self.setup_queue_tests(topic)
 
-        with mock.patch('user.MQTTSubscribe.MQTTSubscribe') as mock_manager:
+        with mock.patch('user.MQTTSubscribe.MQTTSubscriber') as mock_manager:
             with mock.patch('user.MQTTSubscribe.time') as mock_time:
                 type(mock_manager.return_value).subscribed_topics = mock.PropertyMock(return_value=[topic])
                 type(mock_manager.return_value).get_data = mock.Mock(return_value=self.generator([self.queue_data]))
@@ -167,11 +188,29 @@ class TestgenArchiveRecords(unittest.TestCase):
         for data in test_data:
             yield data
 
+    @staticmethod
+    def empty_generator():
+        return
+        yield # needed to make this a generator # pylint: disable=unreachable
+
     def test_empty_queue(self):
         archive_topic = 'archive'
         self.setup_archive_queue_tests(archive_topic)
 
-        with mock.patch('user.MQTTSubscribe.MQTTSubscribe') as mock_manager:
+        with mock.patch('user.MQTTSubscribe.MQTTSubscriber') as mock_manager:
+            type(mock_manager.return_value).get_data = mock.Mock(return_value=self.empty_generator())
+
+            SUT = MQTTSubscribeDriver(**self.config_dict)
+            gen = SUT.genArchiveRecords(0)
+            data = next(gen, None)
+
+            self.assertIsNone(data)
+
+    def test_queuereturns_none(self):
+        archive_topic = 'archive'
+        self.setup_archive_queue_tests(archive_topic)
+
+        with mock.patch('user.MQTTSubscribe.MQTTSubscriber') as mock_manager:
             type(mock_manager.return_value).get_data = mock.Mock(return_value=self.generator([None]))
 
             SUT = MQTTSubscribeDriver(**self.config_dict)
@@ -186,7 +225,7 @@ class TestgenArchiveRecords(unittest.TestCase):
 
         records = list()
 
-        with mock.patch('user.MQTTSubscribe.MQTTSubscribe'):
+        with mock.patch('user.MQTTSubscribe.MQTTSubscriber'):
             with self.assertRaises(NotImplementedError) as error:
                 SUT = MQTTSubscribeDriver(**config_dict)
 
@@ -200,7 +239,7 @@ class TestgenArchiveRecords(unittest.TestCase):
         self.setup_archive_queue_tests(archive_topic)
         queue_list = [self.queue_data, self.queue_data]
 
-        with mock.patch('user.MQTTSubscribe.MQTTSubscribe') as mock_manager:
+        with mock.patch('user.MQTTSubscribe.MQTTSubscriber') as mock_manager:
             type(mock_manager.return_value).get_data = mock.Mock(return_value=self.generator([self.queue_data, self.queue_data, None]))
             records = list()
 

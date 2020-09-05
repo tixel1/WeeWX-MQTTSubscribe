@@ -16,7 +16,7 @@ import string
 import test_weewx_stubs
 from test_weewx_stubs import weewx
 
-from user.MQTTSubscribe import MQTTSubscribe, Logger
+from user.MQTTSubscribe import MQTTSubscriber, Logger
 
 class Msg(object):
     # pylint: disable=too-few-public-methods
@@ -40,7 +40,7 @@ class TestInitialization(unittest.TestCase):
         with mock.patch('paho.mqtt.client.Client', spec=paho.mqtt.client.Client):
             with mock.patch('user.MQTTSubscribe.MessageCallbackProvider'):
                 # pylint: disable=protected-access
-                SUT = MQTTSubscribe(config, mock_logger)
+                SUT = MQTTSubscriber(config, mock_logger)
 
                 self.assertEqual(SUT.client.on_log, SUT._on_log)
 
@@ -60,7 +60,7 @@ class TestInitialization(unittest.TestCase):
         with mock.patch('paho.mqtt.client.Client', spec=paho.mqtt.client.Client):
             with mock.patch('user.MQTTSubscribe.MessageCallbackProvider'):
                 # pylint: disable=protected-access
-                SUT = MQTTSubscribe(config, mock_logger)
+                SUT = MQTTSubscriber(config, mock_logger)
 
                 self.assertNotEqual(SUT.client.on_log, SUT._on_log)
 
@@ -83,7 +83,7 @@ class TestInitialization(unittest.TestCase):
                 mock_client.return_value = mock_client
                 mock_client.connect.side_effect = mock.Mock(side_effect=exception)
                 with self.assertRaises(weewx.WeeWxIOError) as error:
-                    MQTTSubscribe(config, mock_logger)
+                    MQTTSubscriber(config, mock_logger)
 
                 self.assertEqual(error.exception.args[0], exception)
 
@@ -93,7 +93,7 @@ class TestInitialization(unittest.TestCase):
 
         mock_logger = mock.Mock(spec=Logger)
         with self.assertRaises(ValueError) as error:
-            MQTTSubscribe(config, mock_logger)
+            MQTTSubscriber(config, mock_logger)
 
         self.assertEqual(error.exception.args[0], "[[message_callback]] is required.")
 
@@ -110,7 +110,7 @@ class TestInitialization(unittest.TestCase):
 
         mock_logger = mock.Mock(spec=Logger)
         with self.assertRaises(ValueError) as error:
-            MQTTSubscribe(config, mock_logger)
+            MQTTSubscriber(config, mock_logger)
 
         self.assertEqual(error.exception.args[0], ("Archive topic %s must be in [[topics]]" % archive_topic))
 
@@ -142,7 +142,7 @@ class TestInitialization(unittest.TestCase):
         with mock.patch('paho.mqtt.client.Client', spec=paho.mqtt.client.Client):
             with mock.patch('user.MQTTSubscribe.MessageCallbackProvider'):
                 # pylint: disable=no-member
-                SUT = MQTTSubscribe(config, mock_logger)
+                SUT = MQTTSubscriber(config, mock_logger)
 
                 SUT.client.username_pw_set.assert_not_called()
                 SUT.client.connect.assert_called_once_with(host, port, keepalive)
@@ -175,7 +175,7 @@ class TestInitialization(unittest.TestCase):
         with mock.patch('paho.mqtt.client.Client', spec=paho.mqtt.client.Client):
             with mock.patch('user.MQTTSubscribe.MessageCallbackProvider'):
                 # pylint: disable=no-member
-                SUT = MQTTSubscribe(config, mock_logger)
+                SUT = MQTTSubscriber(config, mock_logger)
 
                 SUT.client.username_pw_set.assert_not_called()
                 SUT.client.connect.assert_called_once_with(host, port, keepalive)
@@ -208,7 +208,7 @@ class TestInitialization(unittest.TestCase):
         with mock.patch('paho.mqtt.client.Client', spec=paho.mqtt.client.Client):
             with mock.patch('user.MQTTSubscribe.MessageCallbackProvider'):
                 # pylint: disable=no-member
-                SUT = MQTTSubscribe(config, mock_logger)
+                SUT = MQTTSubscriber(config, mock_logger)
 
                 SUT.client.username_pw_set.assert_not_called()
                 SUT.client.connect.assert_called_once_with(host, port, keepalive)
@@ -243,7 +243,7 @@ class TestInitialization(unittest.TestCase):
         with mock.patch('paho.mqtt.client.Client', spec=paho.mqtt.client.Client):
             with mock.patch('user.MQTTSubscribe.MessageCallbackProvider'):
                 # pylint: disable=no-member
-                SUT = MQTTSubscribe(config, mock_logger)
+                SUT = MQTTSubscriber(config, mock_logger)
 
                 SUT.client.username_pw_set.assert_called_once_with(username, password)
                 SUT.client.connect.assert_called_once_with(host, port, keepalive)
@@ -267,7 +267,7 @@ class Testtls_configuration(unittest.TestCase):
         with mock.patch('paho.mqtt.client.Client', spec=paho.mqtt.client.Client):
             with mock.patch('user.MQTTSubscribe.MessageCallbackProvider'):
                 # pylint: disable=no-member
-                SUT = MQTTSubscribe(config, mock_logger)
+                SUT = MQTTSubscriber(config, mock_logger)
                 SUT.client.tls_set.assert_called_once_with(ca_certs=ca_certs,
                                                            certfile=None,
                                                            keyfile=None,
@@ -298,7 +298,7 @@ class Testtls_configuration(unittest.TestCase):
                 except AttributeError:
                     saved_version = None
                 with self.assertRaises(ValueError) as error:
-                    MQTTSubscribe(config, mock_logger)
+                    MQTTSubscriber(config, mock_logger)
                 if saved_version:
                     ssl.PROTOCOL_TLS = saved_version
                 self.assertEqual(error.exception.args[0], "Invalid 'tls_version'., %s" % tls_version)
@@ -326,7 +326,7 @@ class Testtls_configuration(unittest.TestCase):
                 except AttributeError:
                     saved_version = None
                 with self.assertRaises(ValueError) as error:
-                    MQTTSubscribe(config, mock_logger)
+                    MQTTSubscriber(config, mock_logger)
                 if saved_version:
                     ssl.PROTOCOL_TLSv1 = saved_version
                 self.assertEqual(error.exception.args[0], "Invalid 'tls_version'., %s" % tls_version)
@@ -354,7 +354,7 @@ class Testtls_configuration(unittest.TestCase):
                 except AttributeError:
                     saved_version = None
                 with self.assertRaises(ValueError) as error:
-                    MQTTSubscribe(config, mock_logger)
+                    MQTTSubscriber(config, mock_logger)
                 if saved_version:
                     ssl.PROTOCOL_TLSv1_1 = saved_version
                 self.assertEqual(error.exception.args[0], "Invalid 'tls_version'., %s" % tls_version)
@@ -382,7 +382,7 @@ class Testtls_configuration(unittest.TestCase):
                 except AttributeError:
                     saved_version = None
                 with self.assertRaises(ValueError) as error:
-                    MQTTSubscribe(config, mock_logger)
+                    MQTTSubscriber(config, mock_logger)
                 if saved_version:
                     ssl.PROTOCOL_TLSv1_2 = saved_version
                 self.assertEqual(error.exception.args[0], "Invalid 'tls_version'., %s" % tls_version)
@@ -410,7 +410,7 @@ class Testtls_configuration(unittest.TestCase):
                 except AttributeError:
                     saved_version = None
                 with self.assertRaises(ValueError) as error:
-                    MQTTSubscribe(config, mock_logger)
+                    MQTTSubscriber(config, mock_logger)
                 if saved_version:
                     ssl.PROTOCOL_SSLv2 = saved_version
                 self.assertEqual(error.exception.args[0], "Invalid 'tls_version'., %s" % tls_version)
@@ -438,7 +438,7 @@ class Testtls_configuration(unittest.TestCase):
                 except AttributeError:
                     saved_version = None
                 with self.assertRaises(ValueError) as error:
-                    MQTTSubscribe(config, mock_logger)
+                    MQTTSubscriber(config, mock_logger)
                 if saved_version:
                     ssl.PROTOCOL_SSLv23 = saved_version
                 self.assertEqual(error.exception.args[0], "Invalid 'tls_version'., %s" % tls_version)
@@ -466,7 +466,7 @@ class Testtls_configuration(unittest.TestCase):
                 except AttributeError:
                     saved_version = None
                 with self.assertRaises(ValueError) as error:
-                    MQTTSubscribe(config, mock_logger)
+                    MQTTSubscriber(config, mock_logger)
                 if saved_version:
                     ssl.PROTOCOL_SSLv3 = saved_version
                 self.assertEqual(error.exception.args[0], "Invalid 'tls_version'., %s" % tls_version)
@@ -494,7 +494,7 @@ class Testtls_configuration(unittest.TestCase):
                 except AttributeError:
                     saved_version = None
                 with self.assertRaises(ValueError) as error:
-                    MQTTSubscribe(config, mock_logger)
+                    MQTTSubscriber(config, mock_logger)
                 if saved_version:
                     ssl.PROTOCOL_SSLv3 = saved_version
                 self.assertEqual(error.exception.args[0], "Invalid 'certs_required'., %s" % certs_required)
@@ -521,7 +521,7 @@ class Testtls_configuration(unittest.TestCase):
                 except AttributeError:
                     saved_version = None
                 with self.assertRaises(ValueError) as error:
-                    MQTTSubscribe(config, mock_logger)
+                    MQTTSubscriber(config, mock_logger)
                 if saved_version:
                     ssl.PROTOCOL_SSLv3 = saved_version
                 self.assertEqual(error.exception.args[0], "'ca_certs' is required.")
@@ -545,7 +545,7 @@ class TestStart(unittest.TestCase):
                     with mock.patch('user.MQTTSubscribe.time'):
                         # pylint: disable=no-member
                         with self.assertRaises(weewx.WeeWxIOError) as error:
-                            SUT = MQTTSubscribe(config, mock_logger)
+                            SUT = MQTTSubscriber(config, mock_logger)
 
                             SUT.userdata = {}
                             SUT.userdata['connect'] = True
@@ -570,7 +570,7 @@ class TestStart(unittest.TestCase):
                 with mock.patch('user.MQTTSubscribe.TopicManager'):
                     with mock.patch('user.MQTTSubscribe.time') as mock_time:
                         # pylint: disable=no-member
-                        SUT = MQTTSubscribe(config, mock_logger)
+                        SUT = MQTTSubscriber(config, mock_logger)
 
                         SUT.userdata = {}
                         SUT.userdata['connect'] = True
@@ -592,7 +592,7 @@ class TestStart(unittest.TestCase):
                 with mock.patch('user.MQTTSubscribe.TopicManager'):
                     with mock.patch('user.MQTTSubscribe.time') as mock_time:
                         # pylint: disable=no-member
-                        SUT = MQTTSubscribe(config, mock_logger)
+                        SUT = MQTTSubscriber(config, mock_logger)
 
                         self.SUT = SUT # pylint: disable=attribute-defined-outside-init
                         SUT.userdata = {}
@@ -617,7 +617,7 @@ class Test_disconnect(unittest.TestCase):
             with mock.patch('user.MQTTSubscribe.MessageCallbackProvider'):
                 with mock.patch('user.MQTTSubscribe.TopicManager'):
                     # pylint: disable=no-member
-                    SUT = MQTTSubscribe(config, mock_logger)
+                    SUT = MQTTSubscriber(config, mock_logger)
 
                     SUT.disconnect()
 
@@ -638,7 +638,7 @@ class TestCallbacks(unittest.TestCase):
             with mock.patch('user.MQTTSubscribe.MessageCallbackProvider'):
                 with mock.patch('user.MQTTSubscribe.TopicManager'):
                     # pylint: disable=no-member, protected-access
-                    SUT = MQTTSubscribe(config, mock_logger)
+                    SUT = MQTTSubscriber(config, mock_logger)
 
                     SUT._on_disconnect(None, None, rc)
 
@@ -659,7 +659,7 @@ class TestCallbacks(unittest.TestCase):
             with mock.patch('user.MQTTSubscribe.MessageCallbackProvider'):
                 with mock.patch('user.MQTTSubscribe.TopicManager'):
                     # pylint: disable=no-member, protected-access
-                    SUT = MQTTSubscribe(config, mock_logger)
+                    SUT = MQTTSubscriber(config, mock_logger)
 
                     SUT._on_subscribe(None, None, mid, granted_qos)
 
@@ -681,7 +681,7 @@ class TestCallbacks(unittest.TestCase):
             with mock.patch('user.MQTTSubscribe.MessageCallbackProvider'):
                 with mock.patch('user.MQTTSubscribe.TopicManager'):
                     # pylint: disable=no-member, protected-access
-                    SUT = MQTTSubscribe(config, mock_logger)
+                    SUT = MQTTSubscriber(config, mock_logger)
 
                     SUT._on_log(None, None, level, msg)
 
@@ -726,7 +726,7 @@ class Teston_connect(unittest.TestCase):
                     type(mock_manager.return_value).get_qos = mock.Mock(return_value=qos)
                     mock_client.subscribe.return_value = [1, 0]
 
-                    SUT = MQTTSubscribe(config, mock_logger)
+                    SUT = MQTTSubscriber(config, mock_logger)
 
                     rc = random.randint(1, 10)
                     userdata = {}

@@ -18,7 +18,8 @@ import time
 
 import test_weewx_stubs # used to set up stubs - pylint: disable=unused-import
 
-from user.MQTTSubscribe import MessageCallbackProvider, TopicManager, Logger
+import user.MQTTSubscribe
+from user.MQTTSubscribe import TopicManager, Logger
 
 # Stole from six module. Added to eliminate dependency on six when running under WeeWX 3.x
 PY2 = sys.version_info[0] == 2
@@ -39,7 +40,7 @@ class TestGetDefaultCallBacks(unittest.TestCase):
         message_handler_config_dict['type'] = payload_type
 
         with self.assertRaises(ValueError) as context:
-            MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, None)
+            user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, None)
 
         self.assertEqual(str(context.exception), "Invalid type configured: %s" % payload_type)
 
@@ -52,7 +53,7 @@ class TestGetDefaultCallBacks(unittest.TestCase):
         message_handler_config_dict = {}
         message_handler_config_dict['type'] = 'individual'
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         callback = SUT.get_callback()
         self.assertEqual(callback, SUT._on_message_individual)
@@ -66,7 +67,7 @@ class TestGetDefaultCallBacks(unittest.TestCase):
         message_handler_config_dict = {}
         message_handler_config_dict['type'] = 'json'
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         callback = SUT.get_callback()
         self.assertEqual(callback, SUT._on_message_json)
@@ -80,7 +81,7 @@ class TestGetDefaultCallBacks(unittest.TestCase):
         message_handler_config_dict = {}
         message_handler_config_dict['type'] = 'keyword'
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         callback = SUT.get_callback()
         self.assertEqual(callback, SUT._on_message_keyword)
@@ -105,7 +106,7 @@ class TestConversionType(unittest.TestCase):
         fields[input_name] = field
         message_handler_config_dict['fields'] = fields
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         new_value = SUT._convert_value(fields, input_name, value)
 
@@ -132,7 +133,7 @@ class TestConversionType(unittest.TestCase):
         fields[input_name] = field
         message_handler_config_dict['fields'] = fields
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         new_value = SUT._convert_value(fields, input_name, value)
 
@@ -159,7 +160,7 @@ class TestConversionType(unittest.TestCase):
         fields[input_name] = field
         message_handler_config_dict['fields'] = fields
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         new_value = SUT._convert_value(fields, input_name, value)
 
@@ -184,7 +185,7 @@ class TestConversionType(unittest.TestCase):
         fields[input_name] = field
         message_handler_config_dict['fields'] = fields
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         new_value = SUT._convert_value(fields, input_name, value)
 
@@ -210,7 +211,7 @@ class TestConversionType(unittest.TestCase):
         fields[input_name] = field
         message_handler_config_dict['fields'] = fields
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         new_value = SUT._convert_value(fields, input_name, value)
 
@@ -234,7 +235,7 @@ class TestKeywordload(unittest.TestCase):
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         payload = ''
         payload = payload.encode('UTF-8')
@@ -252,7 +253,7 @@ class TestKeywordload(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         msg = Msg(self.topic, 'field=value', 0, 0)
 
@@ -267,7 +268,7 @@ class TestKeywordload(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         msg = Msg(self.topic, 'field1=1 field2=2', 0, 0)
 
@@ -282,7 +283,7 @@ class TestKeywordload(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         payload = ' field:1'
         payload = payload.encode('UTF-8')
@@ -300,7 +301,7 @@ class TestKeywordload(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         payload_dict = dict(self.payload_dict)
         payload_dict['usUnits'] = random.randint(1, 10)
@@ -327,7 +328,7 @@ class TestKeywordload(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         payload_dict = dict(self.payload_dict)
         payload_dict['dateTime'] = round(time.time(), 2)
@@ -353,7 +354,7 @@ class TestKeywordload(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         payload_dict = dict(self.payload_dict)
         payload_dict['dateTime'] = round(time.time(), 2)
@@ -387,7 +388,7 @@ class TestKeywordload(unittest.TestCase):
 
         message_handler_config_dict['fields'] = fields
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         payload_dict = dict(self.payload_dict)
         payload_dict['dateTime'] = round(time.time(), 2)
@@ -431,7 +432,7 @@ class TestKeywordload(unittest.TestCase):
 
         message_handler_config_dict['fields'] = fields
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         payload_dict = {}
         payload_dict['dateTime'] = round(time.time(), 2)
@@ -469,7 +470,7 @@ class TestKeywordload(unittest.TestCase):
 
         message_handler_config_dict['fields'] = fields
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         payload_dict = {}
         payload_dict['outTemp'] = self.payload_dict['outTemp']
@@ -506,7 +507,7 @@ class TestJsonPayload(unittest.TestCase):
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         msg = Msg(self.topic,
                   ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)]),  # pylint: disable=unused-variable
@@ -522,7 +523,7 @@ class TestJsonPayload(unittest.TestCase):
         mock_manager.get_msg_id_field.return_value = None
         mock_manager.get_ignore_msg_id_field.return_value = []
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         msg = Msg(self.topic, '', 0, 0)
 
@@ -537,7 +538,7 @@ class TestJsonPayload(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
 
         payload_dict = dict(self.payload_dict)
         payload_dict['usUnits'] = random.randint(1, 10)
@@ -561,7 +562,7 @@ class TestJsonPayload(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
 
         payload_dict = dict(self.payload_dict)
         payload_dict['dateTime'] = time.time()
@@ -586,7 +587,7 @@ class TestJsonPayload(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
 
         payload_dict = dict(self.payload_dict)
         payload_dict['dateTime'] = time.time()
@@ -616,7 +617,7 @@ class TestJsonPayload(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_ignore_msg_id_field.return_value = []
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
 
         payload_dict = dict(self.payload_dict)
         payload_dict['dateTime'] = time.time()
@@ -653,7 +654,7 @@ class TestJsonPayload(unittest.TestCase):
         mock_manager.get_fields.return_value = {}
         mock_manager.get_ignore_value.return_value = False
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
 
         payload_dict = dict(self.payload_dict)
         payload_dict['dateTime'] = time.time()
@@ -692,7 +693,7 @@ class TestJsonPayload(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), stub_logger, mock_manager)
 
         payload_dict = {
             'nested01': {
@@ -735,7 +736,7 @@ class TestJsonPayload(unittest.TestCase):
         message_handler_config_dict['fields']['nested01_inTemp'] = {}
         message_handler_config_dict['fields']['nested01_inTemp']['name'] = 'inTemp'
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), stub_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), stub_logger, mock_manager)
 
         payload_dict = {
             'nested01': {
@@ -779,7 +780,7 @@ class TestJsonPayload(unittest.TestCase):
 
         message_handler_config_dict['fields'] = fields
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         payload_dict = dict(self.payload_dict)
         payload_dict['dateTime'] = time.time()
@@ -820,7 +821,7 @@ class TestJsonPayload(unittest.TestCase):
 
         message_handler_config_dict['fields'] = fields
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         payload_dict = {}
         payload_dict['dateTime'] = time.time()
@@ -861,7 +862,7 @@ class TestJsonPayload(unittest.TestCase):
 
         message_handler_config_dict['fields'] = fields
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         payload_dict = {}
         payload_dict['outTemp'] = self.payload_dict['outTemp']
@@ -905,7 +906,7 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         msg = Msg(self.topic,
                   ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)]),  # pylint: disable=unused-variable
@@ -923,7 +924,7 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         msg = Msg(self.topic, '', 0, 0)
 
@@ -938,7 +939,7 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         payload = None
         msg = Msg(self.topic, payload, 0, 0)
@@ -960,7 +961,7 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
         else:
             topic = self.topic
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         payload = round(random.uniform(1, 100), 2)
         if PY2:
@@ -986,7 +987,7 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         payload = round(random.uniform(1, 100), 2)
         if PY2:
@@ -1007,7 +1008,7 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         payload = round(random.uniform(1, 100), 2)
         if PY2:
@@ -1031,7 +1032,7 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         payload = round(random.uniform(1, 100), 2)
         if PY2:
@@ -1061,7 +1062,7 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
 
         message_handler_config_dict['fields'] = fields
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         payload = round(random.uniform(1, 100), 2)
         if PY2:
@@ -1094,7 +1095,7 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
 
         message_handler_config_dict['fields'] = fields
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         payload = round(random.uniform(1, 100), 2)
         if PY2:
@@ -1124,7 +1125,7 @@ class TestIndividualPayloadSingleTopicFieldName(unittest.TestCase):
         fields[self.single_topic] = field
         message_handler_config_dict['fields'] = fields
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         payload = round(random.uniform(1, 100), 2)
         if PY2:
@@ -1159,7 +1160,7 @@ class TestIndividualPayloadFullTopicFieldName(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         msg = Msg(self.topic,
                   ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)]),   # pylint: disable=unused-variable
@@ -1177,7 +1178,7 @@ class TestIndividualPayloadFullTopicFieldName(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         msg = Msg(self.topic, '', 0, 0)
 
@@ -1194,7 +1195,7 @@ class TestIndividualPayloadFullTopicFieldName(unittest.TestCase):
 
         message_handler_config_dict = dict(self.message_handler_config_dict)
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(message_handler_config_dict), mock_logger, mock_manager)
 
         msg = Msg(self.topic, None, 0, 0)
 
@@ -1209,7 +1210,7 @@ class TestIndividualPayloadFullTopicFieldName(unittest.TestCase):
         mock_manager.get_ignore_value.return_value = False
         mock_manager.get_fields.return_value = {}
 
-        SUT = MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
+        SUT = user.MQTTSubscribe.MessageCallbackProvider(configobj.ConfigObj(self.message_handler_config_dict), mock_logger, mock_manager)
 
         payload = round(random.uniform(1, 100), 2)
         if PY2:
