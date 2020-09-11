@@ -307,7 +307,7 @@ class Testnew_archive_record(unittest.TestCase):
             with mock.patch('user.MQTTSubscribe.RecordCache'):
                 # pylint: disable=no-member
                 type(mock_MQTTSubscribe.return_value).cached_fields = mock.PropertyMock(return_value={fieldname:{}})
-                SUT = user.MQTTSubscribe.MQTTSubscribeService(self.mock_StdEngine, config)
+                SUT = user.MQTTSubscribe.MQTTSubscribeService(mock_StdEngine, config)
 
                 record = {
                     'usUnits': unit_system,
