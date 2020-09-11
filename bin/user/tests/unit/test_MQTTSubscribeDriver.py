@@ -1,6 +1,8 @@
 # pylint: disable=wrong-import-order
 # pylint: disable=missing-docstring
 # pylint: disable=invalid-name
+# need to be python 2 compatible pylint: disable=bad-option-value, super-with-arguments
+# pylint: enable=bad-option-value
 
 from __future__ import with_statement
 

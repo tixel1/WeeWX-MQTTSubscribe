@@ -1,6 +1,8 @@
 # pylint: disable=missing-docstring
 # pylint: disable=invalid-name
 # pylint: disable=too-few-public-methods
+# need to be python 2 compatible pylint: disable=bad-option-value, raise-missing-from
+# pylint: enable=bad-option-value
 from __future__ import print_function
 
 import locale

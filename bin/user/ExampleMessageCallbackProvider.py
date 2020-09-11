@@ -7,6 +7,9 @@ Configuration:
 
 """
 
+# need to be python 2 compatible pylint: disable=bad-option-value, raise-missing-from, super-with-arguments
+# pylint: enable=bad-option-value
+
 import xml.etree.ElementTree
 import user.MQTTSubscribe
 

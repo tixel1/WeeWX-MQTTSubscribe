@@ -233,6 +233,9 @@ Configuration:
         [[[second/topic]]]
 """
 
+# need to be python 2 compatible pylint: disable=bad-option-value, raise-missing-from, super-with-arguments
+# pylint: enable=bad-option-value
+
 from __future__ import with_statement
 from __future__ import print_function
 import argparse
@@ -253,9 +256,6 @@ from collections import deque
 import configobj
 import paho.mqtt.client as mqtt
 
-import weewx
-import weewx.drivers
-from weewx.engine import StdEngine, StdService
 import weeutil
 from weeutil.weeutil import to_bool, to_float, to_int, to_sorted_string
 
@@ -263,6 +263,10 @@ try:
     from weeutil.config import merge_config
 except ImportError:
     from weecfg import merge_config # pre WeeWX 3.9
+
+import weewx
+import weewx.drivers
+from weewx.engine import StdEngine, StdService
 
 VERSION = '1.6.2-rc01'
 DRIVER_NAME = 'MQTTSubscribeDriver'
